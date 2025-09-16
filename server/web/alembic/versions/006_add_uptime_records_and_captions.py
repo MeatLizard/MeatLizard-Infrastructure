@@ -7,7 +7,7 @@ Create Date: 2025-09-16 12:45:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
-from web.app.models import GUID
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '006'
@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     op.create_table('uptime_records',
-        sa.Column('id', GUID(), nullable=False),
+        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('service_name', sa.String(length=100), nullable=False),
         sa.Column('is_online', sa.Boolean(), nullable=False),
         sa.Column('timestamp', sa.DateTime(), nullable=False),

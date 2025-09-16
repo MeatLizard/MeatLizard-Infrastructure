@@ -1,138 +1,65 @@
-# System Architecture
+# Architecture
 
-This document provides a detailed overview of the MeatLizard AI Chat Platform's architecture, its components, and the flow of data through the system.
+This document provides a detailed overview of the MeatLizard AI Platform's architecture.
 
-## 1. Architecture Diagram (Text-Based)
+## 1. System Components
+
+The system is composed of three primary, decoupled components:
+
+1.  **Web Server (FastAPI):** A high-performance Python web server built with FastAPI. It serves the entire frontend user interface (HTML, CSS, JS) and handles user interaction via WebSockets. It is responsible for authentication, session management, and acting as the primary entry point for web users.
+
+2.  **Server-Bot (discord.py):** A Python-based Discord bot that acts as the central orchestrator. It manages the Discord guild, creates private channels for chat sessions, handles all slash commands, logs metrics to the database, saves transcripts to S3, and manages user permissions. It communicates with the FastAPI server via internal, asynchronous message queues.
+
+3.  **Client-Bot (discord.py):** A dedicated Python-based Discord bot designed to run on a machine with a powerful GPU (specifically macOS with Apple Metal support). Its sole responsibility is to listen for encrypted prompts from the Server-Bot, perform LLM inference using a local `llama.cpp` instance, and send the encrypted response back.
+
+## 2. Data Flow & Communication
+
+The data flow is designed to be asynchronous and secure, ensuring that user prompts and AI responses are handled efficiently and privately.
 
 ```
                                +-------------------------+
-                               |   End User (Browser)    |
-                               +-------------------------+
-                                          | (HTTPS)
-                                          v
-+-------------------------------------------------------------------------------------+
-|                                     SERVER SIDE                                     |
-|                                                                                     |
-|  +-----------------------+      +-----------------------+      +------------------+ |
-|  |   FastAPI Web App     |<---->|      PostgreSQL       |<---->|      Redis       | |
-|  | (Session Mgmt, UI)    |      | (Users, Sessions,     |      | (Rate Limiting,  | |
-|  +-----------------------+      |  Messages, Config)    |      |   Cache)         | |
-|           ^                     +-----------------------+      +------------------+ |
-|           |                                |                     ^                  |
-|           v                                v                     |                  |
-|  +-----------------------+      +-----------------------+      |                  |
-|  |  Server Discord Bot   |      |      S3 Storage       |      |                  |
-|  |   (Orchestrator)      |<---->| (Transcripts, Backups)|      |                  |
-|  +-----------------------+      +-----------------------+      |                  |
-|           |                                                      |                  |
-|           | (Discord Gateway API, Encrypted JSON Payload)        |                  |
-|           v                                                      |                  |
-+-------------------------------------------------------------------------------------+
-           |
-           |
-+-------------------------------------------------------------------------------------+
-|                                    CLIENT SIDE                                      |
-|                                  (macOS Hardware)                                   |
-|                                                                                     |
-|  +-----------------------+                                                        |
-|  |  Client Discord Bot   |                                                        |
-|  | (Inference Handler)   |                                                        |
-|  +-----------------------+                                                        |
-|           |                                                                         |
-|           v (Local Subprocess)                                                      |
-|  +-----------------------+                                                        |
-|  |      llama.cpp        |                                                        |
-|  | (LLM Inference, MPS)  |                                                        |
-|  +-----------------------+                                                        |
-|                                                                                     |
-+-------------------------------------------------------------------------------------+
+                               |      FastAPI Server     |
+                               | (Web UI & WebSockets)   |
+                               +-----------+-------------+
+                                           | (Internal Queues)
++------------------------------------------+-------------------------------------------+
+|                                          |                                           |
+|                                          v                                           |
+|  +-------------------------+     +-------+----------+      +-----------------------+ |
+|  |     PostgreSQL DB       |     |  Server-Bot      |      |      Redis            | |
+|  | (Users, Sessions, Logs) | <-->| (Orchestrator)   | <--> | (Rate Limits, Cache)  | |
+|  +-------------------------+     +-------+----------+      +-----------------------+ |
+|                                          |                                           |
+|                                          | (Discord API - Encrypted Messages)        |
+|                                          |                                           |
+|                                          v                                           |
+|                                +---------+--------+                                  |
+|                                |   Client-Bot     |                                  |
+|                                | (LLM Inference)  |                                  |
+|                                +-------+----------+                                  |
+|                                        | (Subprocess Call)                           |
+|                                        v                                             |
+|                                +-------+----------+                                  |
+|                                |    llama.cpp     |                                  |
+|                                | (Apple Metal MPS)|                                  |
+|                                +------------------+                                  |
++--------------------------------------------------------------------------------------+
 ```
 
-## 2. Component Breakdown
+**Step-by-Step Flow:**
 
-### Server-Side Components
+1.  **Session Start (Web):** A user connects to the FastAPI server via WebSocket. The server creates a unique session ID and a dedicated `asyncio.Queue` for this session, storing it in a shared dictionary (`app.state.response_queues`).
+2.  **Request to Bot:** The FastAPI server places a `create_session` message onto a global request queue (`app.state.message_queue`).
+3.  **Channel Creation:** The Server-Bot, running in a separate thread, picks up the message. It connects to the Discord API and creates a new, private text channel visible only to the bot and administrators.
+4.  **Prompt Handling:** The user sends a prompt over the WebSocket. The FastAPI server encrypts it and places it on the request queue with the corresponding `session_id`.
+5.  **Relay to Client:** The Server-Bot retrieves the encrypted prompt and sends it as a message to the appropriate private Discord channel.
+6.  **LLM Inference:** The Client-Bot, listening in the channel, receives the message. It decrypts the content, passes the prompt to its local `llama.cpp` instance for processing, and waits for the response.
+7.  **Response Relay:** The Client-Bot encrypts the AI's response and sends it back to the Discord channel.
+8.  **Return to Web UI:** The Server-Bot sees the Client-Bot's message, decrypts it, finds the correct session-specific response queue from the shared state, and places the plain-text response into it.
+9.  **Display to User:** The FastAPI server, which was awaiting a message on the response queue, immediately receives the response and sends it over the WebSocket to the user's browser.
 
--   **FastAPI Web App**: The primary user-facing component. It's a Python web application built with FastAPI that serves a ChatGPT-like single-page application.
-    -   **Responsibilities**: User authentication, session creation and management, serving the web UI, and providing an API for sending and receiving messages.
--   **Server Discord Bot (`server-bot`)**: A Python application using `discord.py`. It acts as the central nervous system of the chat platform.
-    -   **Responsibilities**:
-        -   Receiving new session requests from the FastAPI app.
-        -   Creating and managing private Discord channels for each chat session.
-        -   Enforcing user permissions and rate limits.
-        -   Relaying messages securely to the `client-bot`.
-        -   Handling slash commands for administration.
-        -   Logging metrics to the database and the `#ai-metrics` channel.
-        -   Orchestrating the creation of transcripts and backups.
--   **PostgreSQL Database**: A relational database that serves as the single source of truth for all persistent data.
-    -   **Managed Data**: User accounts, chat sessions, individual messages, system configurations, and historical metrics.
--   **Redis**: An in-memory data store used for caching and high-speed operations.
-    -   **Responsibilities**: Rate limiting enforcement, caching of frequently accessed data, and temporary session storage.
--   **S3-Compatible Storage**: A cloud or self-hosted object storage solution.
-    -   **Responsibilities**: Long-term, durable storage of chat transcripts (in JSON/CSV format) and regular database backups.
+## 3. Storage
 
-### Client-Side Components
-
--   **Client Discord Bot (`client-bot`)**: A specialized Python `discord.py` bot designed to run on a dedicated macOS machine with Apple Silicon.
-    -   **Responsibilities**:
-        -   Listening for encrypted message payloads from the `server-bot`.
-        -   Decrypting payloads and validating requests.
-        -   Calling the `llama.cpp` executable as a local subprocess with appropriate flags for Metal (MPS) GPU acceleration.
-        -   Capturing the LLM's output.
-        -   Encrypting the response and sending it back to the `server-bot`.
-        -   Monitoring its own health and gracefully handling shutdowns (e.g., due to low battery).
--   **llama.cpp**: A high-performance C/C++ implementation for running LLaMA-family models.
-    -   **Responsibilities**: Performing the actual LLM inference. It is configured to use Apple's Metal Performance Shaders for hardware acceleration.
-
-## 3. Data Flow: A User's Message
-
-This section describes the end-to-end journey of a single message from a web user.
-
-1.  **User Sends Message**: The user types a message into the web UI and clicks "Send". The frontend makes an HTTPS POST request to a FastAPI endpoint (e.g., `/api/v1/sessions/{session_id}/send`).
-
-2.  **FastAPI Processes Request**:
-    -   The FastAPI app receives the request, authenticates the user, and validates the `session_id`.
-    -   It retrieves session metadata (like the associated Discord channel ID) from the PostgreSQL database.
-    -   It saves the user's message to the `messages` table in the database.
-
-3.  **Relay to Server-Bot**:
-    -   The FastAPI app forwards the message content and session metadata to the `server-bot`. (This can be done via an internal API call or a shared Redis queue).
-
-4.  **Server-Bot Prepares Payload**:
-    -   The `server-bot` receives the message.
-    -   It constructs a JSON payload containing the `session_id`, a unique `request_id`, the user's prompt, and any model parameters (e.g., temperature).
-    -   It encrypts this JSON payload using AES-256-GCM with a pre-shared secret key.
-
-5.  **Transmission to Client-Bot**:
-    -   The `server-bot` sends the encrypted payload as a message to the private Discord channel corresponding to the user's session. This message is often prefixed with a special character or format that the `client-bot` is programmed to recognize, ignoring all other messages.
-
-6.  **Client-Bot Receives and Decrypts**:
-    -   The `client-bot`, running on the macOS machine, sees the new message in the channel.
-    -   It identifies it as an inference request, decrypts the payload using the shared secret, and validates its structure.
-
-7.  **Inference with llama.cpp**:
-    -   The `client-bot` invokes the `llama.cpp` binary as a subprocess.
-    -   It passes the prompt from the payload to `llama.cpp`'s standard input and includes command-line arguments for the model path, context size, temperature, and MPS (`--mps`) flags.
-    -   `llama.cpp` loads the model into the Apple Silicon GPU and performs inference.
-
-8.  **Client-Bot Handles Response**:
-    -   The `client-bot` captures the text output from `llama.cpp`'s standard output.
-    -   It constructs a response JSON payload containing the original `request_id` and the generated text.
-    -   It encrypts this response payload and sends it back to the same private Discord channel.
-
-9.  **Server-Bot Processes Response**:
-    -   The `server-bot` sees the encrypted response from the `client-bot`.
-    -   It decrypts the payload and matches the `request_id` to the original request.
-    -   It forwards the decrypted response text back to the FastAPI application.
-
-10. **Final Delivery to User**:
-    -   The FastAPI app receives the response.
-    -   It saves the AI's message to the `messages` table in the database.
-    -   It sends the response back to the user's browser, typically over a WebSocket connection or as the response to the initial POST request, where it is displayed in the UI.
-
-## 4. Offline Fallback Flow
-
--   If the `server-bot` fails to get a response from the `client-bot` within a timeout period, it assumes the client is offline.
--   It can then either:
-    1.  **Inform the User**: Send a message to the FastAPI app indicating that the AI is temporarily unavailable.
-    2.  **Engage Fallback Model**: Generate a response using a simple, server-side Markov chain generator. This provides a degraded but still functional experience.
--   The choice of strategy is configurable.
+-   **PostgreSQL:** The primary relational database for storing persistent data such as users, sessions, messages, audit logs, and metrics.
+-   **Redis:** Used for caching, rate limiting, and potentially as a more robust message queue in a scaled-up deployment.
+-   **S3-Compatible Storage:** Used for storing large objects, specifically chat transcripts and database backups.

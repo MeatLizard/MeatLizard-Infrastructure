@@ -1,0 +1,27 @@
+/* server/web/app/static/css/video_player.css */
+.vjs-theme-city {
+    --vjs-theme-city--primary: #bb86fc;
+    --vjs-theme-city--secondary: #121212;
+}
+
+.video-js.vjs-theme-city {
+    background-color: var(--vjs-theme-city--secondary);
+    color: var(--vjs-theme-city--primary);
+}
+
+.vjs-theme-city .vjs-control-bar {
+    background-color: var(--vjs-theme-city--secondary);
+}
+
+.vjs-theme-city .vjs-play-progress {
+    background-color: var(--vjs-theme-city--primary);
+}
+
+.vjs-theme-city .vjs-slider {
+    background-color: #444;
+}
+
+.vjs-theme-city.light-mode {
+    --vjs-theme-city--primary: #121212;
+    --vjs-theme-city--secondary: #e0e0e0;
+}

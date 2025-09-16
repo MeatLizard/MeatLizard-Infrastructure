@@ -10,6 +10,9 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Add Python's user binary directory to the PATH
+ENV PATH="/root/.local/bin:${PATH}"
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Add any system dependencies here if needed (e.g., for psycopg2)

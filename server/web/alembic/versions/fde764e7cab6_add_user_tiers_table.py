@@ -5,7 +5,7 @@ This template is used by Alembic to generate new migration files.
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from web.app.models import GUID
+
 
 # revision identifiers, used by Alembic.
 revision = 'fde764e7cab6'

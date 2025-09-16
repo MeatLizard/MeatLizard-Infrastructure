@@ -1,0 +1,17 @@
+<!-- server/web/app/templates/file_storage.html -->
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>File Storage</h2>
+    <input type="file">
+    <button>Upload File</button>
+    <br><br>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background-color: #333;">
+            <th style="padding: 10px; text-align: left;">File Name</th>
+            <th style="padding: 10px; text-align: left;">Size</th>
+            <th style="padding: 10px; text-align: left;">Date Added</th>
+        </tr>
+        <!-- File list would be populated here -->
+    </table>
+{% endblock %}

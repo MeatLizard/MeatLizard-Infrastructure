@@ -1,0 +1,74 @@
+/* server/web/app/static/css/main.css */
+:root {
+    --background-color: #121212;
+    --text-color: #e0e0e0;
+    --primary-color: #bb86fc;
+    --surface-color: #1e1e1e;
+    --border-color: #333;
+    --font-family: "Courier New", Courier, monospace;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    margin: 0;
+    padding-top: 60px; /* For fixed navbar */
+}
+
+.navbar {
+    background-color: var(--surface-color);
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 20px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    box-sizing: border-box;
+}
+
+.nav-brand {
+    color: var(--primary-color);
+    font-size: 1.5em;
+    text-decoration: none;
+}
+
+.nav-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+.nav-links li a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 20px;
+    display: block;
+}
+
+.nav-links li a:hover {
+    background-color: var(--border-color);
+}
+
+.container {
+    padding: 20px;
+}
+
+input, textarea, button {
+    background-color: #222;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    padding: 10px;
+    font-family: var(--font-family);
+}
+
+button {
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: #000;
+    border: none;
+}

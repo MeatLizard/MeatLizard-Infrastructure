@@ -1,73 +1,28 @@
-# MeatLizard AI Chat Platform
+# MeatLizard AI Platform
 
-MeatLizard is a production-ready, two-part AI chat system featuring a FastAPI web UI and a powerful Discord bot ecosystem for managing AI inference and user interactions.
+This project is a sophisticated, two-part AI chat system designed for both web and Discord-based interaction. It features a powerful FastAPI backend, a Discord server-bot for management, and a dedicated client-bot for LLM inference.
 
-![Architecture Diagram](docs/architecture.png) <!--- Placeholder for diagram -->
+The platform provides a suite of services including a chat interface, pastebin, URL shortener, file storage, and a fully-featured video player, all presented with a consistent, retro-inspired dark-mode theme.
 
-This platform is designed for performance, security, and scalability, leveraging a dedicated client-side bot for GPU-accelerated LLM inference on Apple Silicon hardware.
+## Key Features
 
-## Table of Contents
+-   **Multi-Service Platform:** A unified web interface for AI chat, pastebin, URL shortening, file storage, and video playback.
+-   **Dual Interface:** Access AI chat sessions from the web UI or through Discord slash commands.
+-   **Private & Secure:** Each chat session is conducted in a private Discord channel, with end-to-end encryption for all messages.
+-   **High-Performance Inference:** The client-bot leverages `llama.cpp` with Apple Metal (MPS) for efficient, local LLM inference.
+-   **Robust & Scalable:** The system is built with a production-ready architecture, using PostgreSQL for data, Redis for caching/rate-limiting, and S3-compatible storage for transcripts and backups.
+-   **Comprehensive Admin Features:** The server-bot provides a suite of admin commands for managing the system, including session control, metrics, and backups.
 
--   [Features](#features)
--   [Architecture](#architecture)
--   [Getting Started](#getting-started)
--   [Documentation](#documentation)
--   [Security](#security)
--   [Contributing](#contributing)
+## Project Documentation
 
-## Features
+For detailed information about the system, please refer to the following documents in the `/docs` directory:
 
--   **Hybrid Chat Interface**: Seamlessly interact with the AI via a web UI or Discord.
--   **High-Performance Inference**: Utilizes `llama.cpp` with Apple Metal (MPS) for fast, local inference on macOS hardware.
--   **Secure & Private Sessions**: Each chat session occurs in a private, permissions-controlled Discord channel.
--   **End-to-End Encrypted Messaging**: Payloads between server and client bots are secured with AES-256-GCM.
--   **Graceful Offline Fallback**: Switches to a lightweight Markov chain generator if the primary client-bot is unavailable.
--   **Comprehensive Admin Dashboard**: Full control over the system via Discord slash commands.
--   **Detailed Metrics & Monitoring**: Real-time metrics on token throughput, GPU usage, and uptime posted to a dedicated channel.
--   **Automated Transcripts & Backups**: Securely archives chat transcripts to S3 and performs regular database backups.
--   **Scalable Architecture**: Built with FastAPI, Celery, PostgreSQL, and Redis to handle production workloads.
-
-## Architecture
-
-The system is composed of two main parts:
-
-1.  **The Server**: A FastAPI application that provides the web interface and a `server-bot` that orchestrates sessions, permissions, and data management within Discord.
-2.  **The Client**: A `client-bot` that runs on dedicated macOS hardware, handling all LLM inference requests.
-
-For a detailed breakdown, see the [Architecture Documentation](docs/ARCHITECTURE.md).
-
-## Getting Started
-
-To get the development environment running, you will need Docker, Colima (or Docker Desktop), and Python 3.11+.
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/MeatLizard-Infrastructure.git
-    cd MeatLizard-Infrastructure
-    ```
-
-2.  **Set up the server:**
-    -   See the [Deployment Guide](docs/DEPLOYMENT.md) for full instructions.
-
-3.  **Set up the client:**
-    -   See the [Client Setup Guide](docs/ADMIN_GUIDE.md#client-bot-setup) for instructions on configuring the `llama.cpp` client.
-
-## Documentation
-
-This project is documented in the `/docs` directory.
-
--   **[README.md](docs/README.md)**: (This file) High-level overview.
--   **[Architecture.md](docs/ARCHITECTURE.md)**: Detailed system architecture, data flow diagrams, and component descriptions.
--   **[Admin Guide](docs/ADMIN_GUIDE.md)**: Instructions for administrators on managing the system, using slash commands, and performing maintenance.
--   **[Deployment Guide](docs/DEPLOYMENT.md)**: Step-by-step instructions for deploying the server and client.
--   **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Information for developers, including code style, testing procedures, and contribution guidelines.
--   **[Security.md](docs/SECURITY.md)**: A guide to the security features of the platform and best practices.
--   **[Prompt Library](docs/PROMPT_LIBRARY.md)**: A collection of curated system and user prompts.
-
-## Security
-
-Security is a core design principle of this platform. All sensitive operations require administrative privileges, communication is encrypted, and data is stored securely. For more details, please review the [Security Documentation](docs/SECURITY.md).
-
-## Contributing
-
-Contributions are welcome. Please read the [Developer Guide](docs/DEVELOPER_GUIDE.md) to get started.
+-   **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** A detailed overview of the system's design, components, and data flow.
+-   **[API_SCHEMA.md](docs/API_SCHEMA.md):** Formal specification of the JSON schemas used for communication.
+-   **[DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md):** Instructions for setting up a development environment.
+-   **[DEPLOYMENT.md](docs/DEPLOYMENT.md):** Step-by-step instructions for deploying the system to a production environment.
+-   **[ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md):** A guide to the available slash commands for users and administrators.
+-   **[SECURITY.md](docs/SECURITY.md):** An overview of the security measures implemented in the system.
+-   **[BACKUPS.md](docs/BACKUPS.md):** Procedures for backing up and restoring system data.
+-   **[PROMPT_LIBRARY.md](docs/PROMPT_LIBRARY.md):** A collection of preset prompts for guiding the AI.
+-   **[TESTING_PLAN.md](docs/TESTING_PLAN.md):** The plan for ensuring the quality and stability of the system.

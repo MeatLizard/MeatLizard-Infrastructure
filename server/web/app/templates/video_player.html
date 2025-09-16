@@ -1,0 +1,30 @@
+<!-- server/web/app/templates/video_player.html -->
+{% extends "base.html" %}
+
+{% block head %}
+    <link href="/static/vendor/video.js/video-js.min.css" rel="stylesheet">
+    <link href="/static/css/video_player.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <h2>Video Player</h2>
+    <video
+        id="my-video"
+        class="video-js vjs-theme-city"
+        controls
+        preload="auto"
+        width="640"
+        height="264"
+        data-setup='{}'>
+        <source src="/static/test_720p.mp4" type="video/mp4">
+        <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a
+            web browser that
+            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+        </p>
+    </video>
+    <br>
+    <button id="theme-toggle">Toggle Theme</button>
+    <script src="/static/vendor/video.js/video.min.js"></script>
+    <script src="/static/js/video_player.js"></script>
+{% endblock %}

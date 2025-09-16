@@ -1,48 +1,28 @@
-"""
-AES-256-GCM encryption and decryption for message payloads.
-"""
+# shared_lib/crypto.py
 import os
-from base64 import b64encode, b64decode
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from dotenv import load_dotenv
 
-class AESCipher:
-    def __init__(self, key: bytes):
-        if len(key) != 32:
-            raise ValueError("AES key must be 32 bytes long")
-        self.key = key
+load_dotenv()
 
-    def encrypt(self, plaintext: str) -> dict:
-        """
-        Encrypts plaintext using AES-256-GCM.
-        Returns a dictionary with ciphertext, iv, and auth_tag, all base64-encoded.
-        """
-        data = plaintext.encode('utf-8')
-        cipher = AES.new(self.key, AES.MODE_GCM)
-        ciphertext, tag = cipher.encrypt_and_digest(data)
-        return {
-            'encrypted_payload': b64encode(ciphertext).decode('utf-8'),
-            'iv': b64encode(cipher.nonce).decode('utf-8'),
-            'auth_tag': b64encode(tag).decode('utf-8')
-        }
+class Encryptor:
+    def __init__(self, key: str):
+        self.key = bytes.fromhex(key)
+        self.aesgcm = AESGCM(self.key)
 
-    def decrypt(self, encrypted_data: dict) -> str:
-        """
-        Decrypts a payload encrypted with AES-256-GCM.
-        Expects a dictionary with base64-encoded ciphertext, iv, and auth_tag.
-        """
-        iv = b64decode(encrypted_data['iv'])
-        tag = b64decode(encrypted_data['auth_tag'])
-        ciphertext = b64decode(encrypted_data['encrypted_payload'])
-        
-        cipher = AES.new(self.key, AES.MODE_GCM, nonce=iv)
-        decrypted_data = cipher.decrypt_and_verify(ciphertext, tag)
-        return decrypted_data.decode('utf-8')
+    def encrypt(self, plaintext: str) -> bytes:
+        nonce = os.urandom(12)
+        ciphertext = self.aesgcm.encrypt(nonce, plaintext.encode("utf-8"), None)
+        return nonce + ciphertext
 
-# Example usage:
-# key = get_random_bytes(32) # Store this securely!
-# cipher = AESCipher(key)
-# encrypted = cipher.encrypt("Hello, secure world!")
-# print(encrypted)
-# decrypted = cipher.decrypt(encrypted)
-# print(decrypted)
+    def decrypt(self, ciphertext: bytes) -> str:
+        nonce = ciphertext[:12]
+        ciphertext = ciphertext[12:]
+        plaintext = self.aesgcm.decrypt(nonce, ciphertext, None)
+        return plaintext.decode("utf-8")
+
+def get_encryptor():
+    key = os.getenv("PAYLOAD_ENCRYPTION_KEY")
+    if not key:
+        raise ValueError("PAYLOAD_ENCRYPTION_KEY not set")
+    return Encryptor(key)
