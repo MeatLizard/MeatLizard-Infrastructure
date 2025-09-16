@@ -1,14 +1,14 @@
 # Administrator's Guide
 
-This guide is for administrators of the MeatLizard AI Platform. It covers system management, user administration, and maintenance tasks.
+This guide is for administrators of a deployed MeatLizard AI Platform. It covers system management, user administration, and routine maintenance tasks. For initial setup and deployment, please see the [Deployment Guide](./DEPLOYMENT.md).
 
-## 1. Prerequisites
+## 1. Admin Role Requirement
 
-To be an administrator, your Discord account must have the "AI Admin" role. This role is configured in the `server/config.yml` file and must be created manually in your Discord server's settings.
+To be an administrator, your Discord account must have the role specified in the `admin_role_id` of your server's configuration. Without this role, you will not be able to use any of the commands listed below.
 
 ## 2. Admin Slash Commands
 
-All admin commands are prefixed with `/ai-admin`. They can only be used by users with the "AI Admin" role.
+All admin commands are prefixed with `/ai-admin`. They can only be used by users with the admin role.
 
 -   **/ai-admin status**:
     -   **Description**: Provides a real-time snapshot of the system's health.
@@ -47,94 +47,67 @@ All admin commands are prefixed with `/ai-admin`. They can only be used by users
     -   **Description**: Sends a command to gracefully restart a system component.
     -   **Arguments**:
         -   `target: client-bot`: The `server-bot` sends a special payload. The `client-bot` will finish its current job, send a confirmation, and then exit. The `launchd` service on the Mac will automatically restart it.
-        -   `target: server-bot`: The bot will restart its own process. This should be used with caution.
+        -   `target: server-bot`: The bot will restart its own process. This should be used with caution as it may cause a few seconds of downtime.
 
 ## 3. User Management
 
 ### Banning a User
 
-To ban a user, use the native Discord ban functionality. The `server-bot` will detect this and automatically prevent the banned user ID from starting new sessions.
+To ban a user from the AI service, use the native Discord ban functionality in your server settings (`Server Settings > Bans > Add Ban`). The `server-bot` will check against Discord's ban list and prevent banned user IDs from starting new sessions.
 
 ### Making a User an Admin
 
-Assign the "AI Admin" role to the user in your Discord server's settings.
+Assign the designated "AI Admin" role to the user in your Discord server's settings (`Server Settings > Roles`).
 
-## 4. Client-Bot Setup (macOS)
+## 4. Routine Maintenance
 
-The `client-bot` is designed to be run on a dedicated Mac with Apple Silicon.
+### Checking Server Logs
 
-### 4.1. Initial Setup
+You can check the logs of the running server components using `docker compose`.
+```bash
+# SSH into your Debian server and navigate to the infra directory
+cd MeatLizard-Infrastructure/infra
 
-1.  **Install Dependencies**:
+# View logs for all services
+docker compose logs -f
+
+# View logs for a specific service (e.g., the web server)
+docker compose logs -f web
+```
+
+### Checking Client Logs
+
+The client bot's logs are stored in the files defined in its `launchd` service file.
+```bash
+# SSH into your Mac or open Terminal.app
+# View the standard output log
+tail -f ~/logs/client-bot.log
+
+# View the error log in a new terminal
+tail -f ~/logs/client-bot.error.log
+```
+
+### Updating the Application
+
+1.  **Server**:
     ```bash
-    # Install Homebrew if you don't have it
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    # Install Python and other tools
-    brew install python@3.11 cmake
+    # SSH into your Debian server
+    cd MeatLizard-Infrastructure
+    git pull
+    cd infra
+    docker compose up --build -d # This will rebuild and restart the containers
+    docker compose exec web alembic upgrade head # Apply any new database migrations
     ```
 
-2.  **Clone and Build `llama.cpp`**:
+2.  **Client**:
     ```bash
-    git clone https://github.com/ggerganov/llama.cpp.git
-    cd llama.cpp
-
-    # Build with Metal (MPS) support
-    make clean
-    LLAMA_METAL=1 make
+    # SSH into your Mac
+    cd ~/dev/MeatLizard-Infrastructure
+    git pull
+    cd client_bot
+    source venv/bin/activate
+    pip install -r requirements.txt # Update dependencies
+    # Restart the service to apply changes
+    launchctl stop com.meatlizard.clientbot
+    launchctl start com.meatlizard.clientbot
     ```
-    This will create the `main` executable in the `llama.cpp` directory.
-
-3.  **Download Models**:
-    -   Download your desired GGUF-formatted models (e.g., from Hugging Face).
-    -   Store them in a dedicated folder, e.g., `/Users/admin/ai/models/`.
-
-4.  **Configure the Client Bot**:
-    -   Copy the `client_bot/config.yml.example` to `client_bot/config.yml`.
-    -   Edit the config file, filling in your bot token, server bot ID, and the correct paths to the `llama.cpp` executable and your models.
-
-### 4.2. Running as a Service (`launchd`)
-
-To ensure the `client-bot` runs continuously and restarts on reboot, you should run it as a `launchd` service.
-
-1.  **Create a Launch Agent file**:
-    -   Create a file at `~/Library/LaunchAgents/com.meat-lizard.client-bot.plist`.
-
-2.  **Edit the `.plist` file**:
-    ```xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
-    <dict>
-        <key>Label</key>
-        <string>com.meat-lizard.client-bot</string>
-        <key>ProgramArguments</key>
-        <array>
-            <string>/usr/local/bin/python3.11</string> <!-- Or path from 'which python3.11' -->
-            <string>/Users/admin/MeatLizard-Infrastructure/client_bot/main.py</string> <!-- Absolute path to your bot's main script -->
-        </array>
-        <key>WorkingDirectory</key>
-        <string>/Users/admin/MeatLizard-Infrastructure/client_bot</string> <!-- Absolute path to the bot's directory -->
-        <key>RunAtLoad</key>
-        <true/>
-        <key>KeepAlive</key>
-        <true/>
-        <key>StandardOutPath</key>
-        <string>/Users/admin/logs/client-bot.log</string>
-        <key>StandardErrorPath</key>
-        <string>/Users/admin/logs/client-bot.error.log</string>
-    </dict>
-    </plist>
-    ```
-    *   **Important**: Make sure to use the correct absolute paths for your Python executable, the bot script, and the working directory.
-
-3.  **Load and start the service**:
-    ```bash
-    # Load the service
-    launchctl load ~/Library/LaunchAgents/com.meat-lizard.client-bot.plist
-
-    # Start it immediately
-    launchctl start com.meat-lizard.client-bot
-    ```
-
-    The bot will now run in the background and restart automatically. You can check the log files for its output.
