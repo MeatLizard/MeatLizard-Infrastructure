@@ -1,0 +1,1 @@
+# Client Bot - macOS Discord bot with llama.cpp integration

@@ -1,0 +1,74 @@
+# infra/docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: meat-lizard-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-meatdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: meat-lizard-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/server.Dockerfile
+    container_name: meat-lizard-web
+    command: uvicorn server.web.app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ..:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-meatdb}
+      - REDIS_HOST=redis
+      # Other env vars for the web app would go here
+
+  server_bot:
+    build:
+      context: ..
+      dockerfile: infra/server.Dockerfile
+    container_name: meat-lizard-server-bot
+    command: python server/server_bot/bot.py
+    volumes:
+      - ..:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTG-USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-meatdb}
+      - REDIS_HOST=redis
+      - SERVER_BOT_TOKEN=${SERVER_BOT_TOKEN}
+      - CLIENT_BOT_ID=${CLIENT_BOT_ID}
+      - PAYLOAD_ENCRYPTION_KEY=${PAYLOAD_ENCRYPTION_KEY}
+
+volumes:
+  postgres_data:

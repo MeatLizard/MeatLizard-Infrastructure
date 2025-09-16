@@ -1,0 +1,20 @@
+# --- Core Server Dependencies ---
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
+redis
+pydantic
+
+# --- Discord Bot ---
+discord.py
+
+# --- Cryptography ---
+py-cryptodomex
+
+# --- For Background Tasks (Celery) ---
+celery[redis]
+
+# --- S3 Storage ---
+boto3

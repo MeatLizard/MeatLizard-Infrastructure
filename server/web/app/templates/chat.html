@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat System</title>
+  <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="icon" title="Settings">⚙️</div>
+    <div class="icon active" title="AI Chat">🤖</div>
+    <div class="icon" title="History">📜</div>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window">
+    <div class="chat-header">
+      <div class="header-content">
+        <span class="chat-title">🤖 AI Chat System</span>
+        <div class="status-indicator">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">Connecting...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="timestamp" id="session-start">Session started</div>
+      <div class="bubble bot">
+        Hello! I'm your AI assistant. How can I help you today?
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-bar">
+      <input type="text" id="message-input" placeholder="Type your message..." maxlength="2000">
+      <button id="send-button" disabled>Send</button>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI is thinking...</div>
+  </div>
+
+  <script src="/static/js/chat.js"></script>
+</body>
+</html>

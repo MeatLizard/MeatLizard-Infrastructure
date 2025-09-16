@@ -1,0 +1,11 @@
+# --- Discord Bot ---
+discord.py
+
+# --- Cryptography ---
+py-cryptodomex
+
+# --- Configuration ---
+pyyaml
+
+# --- System Monitoring ---
+psutil

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+alembic
+psycopg2-binary
+python-dotenv
+bcrypt
+pygments
+tuspyserver
+tuspy
+python-magic
+pyclamd
+passlib[bcrypt]
+python-jose[cryptography]
