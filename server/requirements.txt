@@ -8,3 +8,11 @@ aiohttp
 requests
 boto3
 cryptography
+alembic
+asyncpg
+redis[hiredis]>=4.5.0
+ffmpeg-python
+playwright
+pytest-playwright
+pytest-asyncio
+yt-dlp

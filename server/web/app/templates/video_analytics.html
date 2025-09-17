@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - MeatLizard AI Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/analytics_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <a href="/dashboard/analytics" class="back-link">← Back to Dashboard</a>
+                <h1>Video Analytics</h1>
+            </div>
+            <div class="header-controls">
+                <select id="timeframe-selector" class="timeframe-select">
+                    <option value="1h" {% if timeframe == "1h" %}selected{% endif %}>Last hour</option>
+                    <option value="24h" {% if timeframe == "24h" %}selected{% endif %}>Last 24 hours</option>
+                    <option value="7d" {% if timeframe == "7d" %}selected{% endif %}>Last 7 days</option>
+                    <option value="30d" {% if timeframe == "30d" %}selected{% endif %}>Last 30 days</option>
+                </select>
+                <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+                <button id="export-btn" class="btn btn-primary">Export Data</button>
+            </div>
+        </header>
+
+        <!-- Video Info -->
+        <div class="video-info-section">
+            <div class="card">
+                <div class="card-body">
+                    <h2>{{ video_data.basic_metrics.get('video_title', 'Video Analytics') }}</h2>
+                    <div class="video-meta">
+                        <span>Video ID: {{ video_id }}</span>
+                        <span>Duration: {{ video_data.basic_metrics.video_duration_seconds // 60 }}:{{ "{:02d}".format(video_data.basic_metrics.video_duration_seconds % 60) }}</span>
+                        <span>Timeframe: {{ timeframe }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="overview-cards">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Total Views</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ "{:,}".format(video_data.basic_metrics.total_views) }}</div>
+                    <div class="metric-change">{{ "{:.1f}%".format(video_data.basic_metrics.completion_rate_percent) }} completion rate</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Watch Time</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ "{:.1f}h".format(video_data.basic_metrics.total_watch_time_seconds / 3600) }}</div>
+                    <div class="metric-change">{{ "{:.1f}s".format(video_data.basic_metrics.average_watch_time_seconds) }} avg per view</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Engagement</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ video_data.engagement_metrics.likes + video_data.engagement_metrics.dislikes + video_data.engagement_metrics.comments }}</div>
+                    <div class="metric-change">{{ "{:.1f}%".format(video_data.engagement_metrics.engagement_rate) }} rate</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Quality Performance</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ "{:.1f}".format(video_data.quality_metrics.avg_buffering_per_view) }}</div>
+                    <div class="metric-change">avg buffering events</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Metrics -->
+        <div class="realtime-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Real-time Activity <span id="realtime-indicator" class="realtime-dot"></span></h3>
+                </div>
+                <div class="card-body">
+                    <div class="realtime-metrics">
+                        <div class="realtime-metric">
+                            <span class="metric-label">Active Viewers</span>
+                            <span id="active-viewers" class="metric-value">-</span>
+                        </div>
+                        <div class="realtime-metric">
+                            <span class="metric-label">Events (5min)</span>
+                            <span id="recent-events" class="metric-value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-row">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Views Over Time</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="viewsOverTimeChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Audience Retention</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="retentionChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Quality Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="qualityChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Engagement Timeline</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="engagementChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Metrics -->
+        <div class="detailed-metrics">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Engagement Breakdown</h3>
+                </div>
+                <div class="card-body">
+                    <div class="engagement-stats">
+                        <div class="engagement-stat">
+                            <span class="stat-icon">👍</span>
+                            <span class="stat-label">Likes</span>
+                            <span class="stat-value">{{ video_data.engagement_metrics.likes }}</span>
+                        </div>
+                        <div class="engagement-stat">
+                            <span class="stat-icon">👎</span>
+                            <span class="stat-label">Dislikes</span>
+                            <span class="stat-value">{{ video_data.engagement_metrics.dislikes }}</span>
+                        </div>
+                        <div class="engagement-stat">
+                            <span class="stat-icon">💬</span>
+                            <span class="stat-label">Comments</span>
+                            <span class="stat-value">{{ video_data.engagement_metrics.comments }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Quality Performance</h3>
+                </div>
+                <div class="card-body">
+                    <div class="quality-performance">
+                        {% for quality, count in video_data.quality_metrics.quality_distribution.items() %}
+                        <div class="quality-stat">
+                            <span class="quality-label">{{ quality }}</span>
+                            <div class="quality-bar">
+                                <div class="quality-fill" style="width: {{ (count / video_data.basic_metrics.total_views * 100) if video_data.basic_metrics.total_views > 0 else 0 }}%"></div>
+                            </div>
+                            <span class="quality-count">{{ count }} views</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="performance-stats">
+                        <div class="perf-stat">
+                            <span class="stat-label">Total Buffering Events</span>
+                            <span class="stat-value">{{ video_data.quality_metrics.total_buffering_events }}</span>
+                        </div>
+                        <div class="perf-stat">
+                            <span class="stat-label">Quality Switches</span>
+                            <span class="stat-value">{{ video_data.quality_metrics.total_quality_switches }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Analytics Data</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <label>
+                        <input type="radio" name="export-format" value="json" checked>
+                        JSON Format
+                    </label>
+                    <label>
+                        <input type="radio" name="export-format" value="csv">
+                        CSV Format
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="export-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="export-confirm" class="btn btn-primary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/analytics_dashboard.js') }}"></script>
+    <script>
+        // Initialize video analytics with data
+        const videoData = {{ video_data | tojson }};
+        const videoId = "{{ video_id }}";
+        const currentTimeframe = "{{ timeframe }}";
+        
+        // Initialize charts and real-time updates when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeVideoAnalytics(videoData, videoId, currentTimeframe);
+        });
+    </script>
+</body>
+</html>

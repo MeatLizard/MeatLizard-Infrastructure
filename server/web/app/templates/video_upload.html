@@ -1,0 +1,159 @@
+<!-- server/web/app/templates/video_upload.html -->
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/video_upload.css">
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <h1>Upload Video</h1>
+    
+    <!-- Upload Form -->
+    <div class="upload-form-container">
+        <form id="videoUploadForm" enctype="multipart/form-data">
+            <!-- File Selection -->
+            <div class="form-section">
+                <h2>Select Video File</h2>
+                <div class="file-input-container">
+                    <input type="file" id="videoFile" name="video" accept="video/*" required>
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <p><strong>File:</strong> <span id="fileName"></span></p>
+                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                        <p><strong>Type:</strong> <span id="fileType"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Metadata -->
+            <div class="form-section">
+                <h2>Video Information</h2>
+                
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="videoTitle">Title *</label>
+                    <input type="text" id="videoTitle" name="title" maxlength="100" required>
+                    <div class="char-counter">
+                        <span id="titleCounter">0</span>/100 characters
+                    </div>
+                    <div class="field-help">Enter a descriptive title for your video</div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="videoDescription">Description</label>
+                    <textarea id="videoDescription" name="description" maxlength="5000" rows="4"></textarea>
+                    <div class="char-counter">
+                        <span id="descriptionCounter">0</span>/5000 characters
+                    </div>
+                    <div class="field-help">Provide additional details about your video content</div>
+                </div>
+
+                <!-- Tags -->
+                <div class="form-group">
+                    <label for="videoTags">Tags</label>
+                    <input type="text" id="videoTags" name="tags" placeholder="Enter tags separated by commas">
+                    <div class="tags-container" id="tagsContainer"></div>
+                    <div class="field-help">
+                        Add up to 20 tags to help people discover your video. 
+                        <button type="button" id="showPopularTags" class="link-button">View popular tags</button>
+                    </div>
+                </div>
+
+                <!-- Popular Tags Modal -->
+                <div id="popularTagsModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Popular Tags</h3>
+                            <button type="button" class="close-button" id="closePopularTags">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="popularTagsList" class="tags-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Presets (will be populated after file analysis) -->
+            <div class="form-section" id="qualitySection" style="display: none;">
+                <h2>Quality Settings</h2>
+                <div class="quality-presets" id="qualityPresets">
+                    <!-- Quality checkboxes will be populated here -->
+                </div>
+                <div class="field-help">Select the quality levels you want to generate for your video</div>
+            </div>
+
+            <!-- Thumbnail Selection (will be populated after upload) -->
+            <div class="form-section" id="thumbnailSection" style="display: none;">
+                <h2>Thumbnail Selection</h2>
+                <div class="thumbnail-grid" id="thumbnailGrid">
+                    <!-- Thumbnail options will be populated here -->
+                </div>
+                <div class="thumbnail-actions">
+                    <button type="button" id="regenerateThumbnails" class="btn btn-secondary">
+                        Regenerate Thumbnails
+                    </button>
+                    <button type="button" id="autoSelectThumbnail" class="btn btn-secondary">
+                        Auto-Select Best
+                    </button>
+                </div>
+                <div class="field-help">Choose a thumbnail that represents your video</div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div class="form-section" id="progressSection" style="display: none;">
+                <h2>Upload Progress</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressPercent">0%</span>
+                        <span id="progressStatus">Ready to upload</span>
+                    </div>
+                </div>
+                <div class="upload-details" id="uploadDetails">
+                    <p><strong>Uploaded:</strong> <span id="uploadedSize">0 MB</span> / <span id="totalSize">0 MB</span></p>
+                    <p><strong>Speed:</strong> <span id="uploadSpeed">0 MB/s</span></p>
+                    <p><strong>Time remaining:</strong> <span id="timeRemaining">--</span></p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <button type="button" id="analyzeButton" class="btn btn-secondary" disabled>
+                    Analyze Video
+                </button>
+                <button type="submit" id="uploadButton" class="btn btn-primary" disabled>
+                    Upload Video
+                </button>
+                <button type="button" id="cancelButton" class="btn btn-danger" style="display: none;">
+                    Cancel Upload
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Upload Result -->
+    <div class="upload-result" id="uploadResult" style="display: none;">
+        <div class="result-content">
+            <h2>Upload Complete!</h2>
+            <p>Your video has been uploaded successfully and is being processed.</p>
+            <div class="result-details">
+                <p><strong>Video ID:</strong> <span id="resultVideoId"></span></p>
+                <p><strong>Status:</strong> <span id="resultStatus"></span></p>
+            </div>
+            <div class="result-actions">
+                <button type="button" id="uploadAnotherButton" class="btn btn-primary">
+                    Upload Another Video
+                </button>
+                <a href="/player" class="btn btn-secondary">
+                    Go to Video Player
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/video_upload.js"></script>
+{% endblock %}

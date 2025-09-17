@@ -1,53 +1,136 @@
 version: '3.8'
 
 services:
-  db:
+  postgres:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DATABASE_DATABASE}
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: meatlizard
+      POSTGRES_USER: meatlizard
+      POSTGRES_PASSWORD: meatlizard_password
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d
     ports:
-      - "5432:5432" # Expose for local development and debugging
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meatlizard"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379" # Expose for local development and debugging
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   web:
     build:
       context: .
       dockerfile: server/web/Dockerfile
     restart: unless-stopped
-    command: uvicorn server.web.app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - .:/app
-    env_file:
-      - .env
+    command: uvicorn server.web.app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://meatlizard:meatlizard_password@postgres:5432/meatlizard
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   server_bot:
     build:
       context: .
       dockerfile: server/server_bot/Dockerfile
     restart: unless-stopped
-    command: python server/server_bot/bot.py
-    volumes:
-      - .:/app
+    command: python server/server_bot/bot_production.py
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://meatlizard:meatlizard_password@postgres:5432/meatlizard
+      - REDIS_URL=redis://redis:6379
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+  transcoding_worker:
+    build:
+      context: .
+      dockerfile: infra/transcoding-worker.Dockerfile
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://meatlizard:meatlizard_password@postgres:5432/meatlizard
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./media:/app/media
+      - /tmp/transcoding:/tmp/transcoding
+
+  import_worker:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    command: python run_import_worker.py
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://meatlizard:meatlizard_password@postgres:5432/meatlizard
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./media:/app/media
+      - /tmp/imports:/tmp/imports
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d
+      - ./media:/var/www/media
+      - ./server/web/app/static:/var/www/static
+    depends_on:
+      - web
 
 volumes:
   postgres_data:
+  redis_data:

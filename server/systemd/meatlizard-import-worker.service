@@ -1,0 +1,41 @@
+[Unit]
+Description=MeatLizard Import Worker
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=meatlizard
+Group=meatlizard
+WorkingDirectory=/opt/meatlizard/server
+Environment=PYTHONPATH=/opt/meatlizard/server
+EnvironmentFile=/opt/meatlizard/server/.env
+ExecStart=/opt/meatlizard/venv/bin/python run_import_worker.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=meatlizard-import-worker
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/meatlizard/server/temp /tmp
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

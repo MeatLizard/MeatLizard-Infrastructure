@@ -1,0 +1,87 @@
+# Prometheus Configuration for Video Platform Monitoring
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'video-platform-dev'
+    environment: 'development'
+
+# Alertmanager configuration (optional for development)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # FastAPI web application metrics
+  - job_name: 'video-platform-web'
+    static_configs:
+      - targets: ['web:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # PostgreSQL metrics (requires postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # Redis metrics (requires redis_exporter)
+  - job_name: 'redis-master'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # MinIO metrics
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio:9000']
+    metrics_path: '/minio/v2/metrics/cluster'
+    scrape_interval: 30s
+
+  # Nginx metrics (requires nginx-prometheus-exporter)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 30s
+
+  # Node exporter for system metrics (optional)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Custom video platform metrics
+  - job_name: 'video-platform-workers'
+    static_configs:
+      - targets: 
+        - 'transcoding-worker:8001'
+        - 'import-worker:8002'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # FFmpeg process metrics (custom exporter)
+  - job_name: 'ffmpeg-metrics'
+    static_configs:
+      - targets: ['transcoding-worker:8003']
+    metrics_path: '/ffmpeg-metrics'
+    scrape_interval: 5s
+
+  # yt-dlp process metrics (custom exporter)
+  - job_name: 'ytdlp-metrics'
+    static_configs:
+      - targets: ['import-worker:8004']
+    metrics_path: '/ytdlp-metrics'
+    scrape_interval: 10s

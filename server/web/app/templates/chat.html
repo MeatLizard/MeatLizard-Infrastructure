@@ -1,16 +1,240 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - MeatLizard AI Platform</title>
+    <link href="/static/css/meatlizard.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="mascot">🦎</div>
+        <h1>MEATLIZARD AI CHAT</h1>
+        <div class="subtitle">Powered by Local AI Inference</div>
+    </header>
 
-{% block head %}
-    <link rel="stylesheet" href="/static/css/chat.css">
-{% endblock %}
+    <!-- Navigation -->
+    <nav>
+        <a href="/">Home</a> |
+        <a href="/dashboard">Dashboard</a> |
+        <a href="/chat" class="active">AI Chat</a> |
+        <a href="/features">Features</a> |
+        <span id="connectionStatus" class="status-offline">Disconnected</span>
+    </nav>
 
-{% block content %}
-    <div id="chat-container">
-        <div id="chat-history"></div>
-        <form id="chat-form">
-            <input type="text" id="message-input" placeholder="Enter your message...">
-            <button type="submit">Send</button>
-        </form>
-    </div>
-    <script src="/static/js/main.js"></script>
-{% endblock %}
+    <!-- Main Content -->
+    <main>
+        <h2>AI Chat Interface</h2>
+        
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message assistant">
+                    <strong>🦎 MeatLizard AI:</strong> Hello! I'm your AI assistant. How can I help you today?
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="chat-input">
+                    <input type="text" id="messageInput" placeholder="Type your message here..." disabled>
+                    <button type="button" id="sendButton" class="retro-button" disabled>
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <button type="button" id="connectButton" class="retro-button">
+                        <i class="fas fa-plug"></i> Connect to AI
+                    </button>
+                    <button type="button" id="clearButton" class="btn-secondary">
+                        <i class="fas fa-trash"></i> Clear Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Panel -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> Chat Status
+            </div>
+            <div id="statusPanel">
+                <p><strong>Connection:</strong> <span id="connectionText" class="status-offline">Disconnected</span></p>
+                <p><strong>Model:</strong> <span id="modelInfo">Not loaded</span></p>
+                <p><strong>Messages:</strong> <span id="messageCount">0</span></p>
+                <p><strong>Session:</strong> <span id="sessionInfo">Not started</span></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        &copy; 2024 MeatLizard Systems | Powered by raw meat and GPUs
+    </footer>
+
+    <script>
+        // Chat functionality
+        let websocket = null;
+        let sessionId = null;
+        let messageCount = 0;
+        let isConnected = false;
+
+        const connectButton = document.getElementById('connectButton');
+        const sendButton = document.getElementById('sendButton');
+        const clearButton = document.getElementById('clearButton');
+        const messageInput = document.getElementById('messageInput');
+        const chatMessages = document.getElementById('chatMessages');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+        const modelInfo = document.getElementById('modelInfo');
+        const messageCountEl = document.getElementById('messageCount');
+        const sessionInfo = document.getElementById('sessionInfo');
+
+        // Connect to WebSocket
+        function connectToChat() {
+            if (websocket) {
+                websocket.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/chat/ws`;
+            
+            websocket = new WebSocket(wsUrl);
+            
+            websocket.onopen = function(event) {
+                console.log('Connected to chat');
+                isConnected = true;
+                updateConnectionStatus('Connected', 'status-online');
+                connectButton.innerHTML = '<i class="fas fa-unlink"></i> Disconnect';
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                
+                // Generate session ID
+                sessionId = 'session_' + Date.now();
+                sessionInfo.textContent = sessionId;
+            };
+            
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'response') {
+                    addMessage('assistant', data.content);
+                } else if (data.type === 'status') {
+                    modelInfo.textContent = data.model || 'Default Model';
+                } else if (data.type === 'error') {
+                    addMessage('system', `Error: ${data.message}`, 'alert-error');
+                }
+            };
+            
+            websocket.onclose = function(event) {
+                console.log('Disconnected from chat');
+                isConnected = false;
+                updateConnectionStatus('Disconnected', 'status-offline');
+                connectButton.innerHTML = '<i class="fas fa-plug"></i> Connect to AI';
+                sendButton.disabled = true;
+                messageInput.disabled = true;
+                sessionInfo.textContent = 'Not started';
+            };
+            
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                addMessage('system', 'Connection error occurred', 'alert-error');
+            };
+        }
+
+        // Disconnect from WebSocket
+        function disconnectFromChat() {
+            if (websocket) {
+                websocket.close();
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(text, className) {
+            connectionStatus.textContent = text;
+            connectionStatus.className = className;
+            connectionText.textContent = text;
+            connectionText.className = className;
+        }
+
+        // Add message to chat
+        function addMessage(sender, content, alertClass = null) {
+            const messageDiv = document.createElement('div');
+            
+            if (alertClass) {
+                messageDiv.className = `alert ${alertClass}`;
+                messageDiv.innerHTML = content;
+            } else {
+                messageDiv.className = `chat-message ${sender}`;
+                
+                if (sender === 'user') {
+                    messageDiv.innerHTML = `<strong>You:</strong> ${content}`;
+                } else if (sender === 'assistant') {
+                    messageDiv.innerHTML = `<strong>🦎 MeatLizard AI:</strong> ${content}`;
+                } else {
+                    messageDiv.innerHTML = `<strong>System:</strong> ${content}`;
+                }
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            if (sender !== 'system') {
+                messageCount++;
+                messageCountEl.textContent = messageCount;
+            }
+        }
+
+        // Send message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !isConnected) return;
+            
+            addMessage('user', message);
+            
+            // Send to WebSocket
+            websocket.send(JSON.stringify({
+                type: 'message',
+                content: message,
+                session_id: sessionId
+            }));
+            
+            messageInput.value = '';
+        }
+
+        // Clear chat
+        function clearChat() {
+            chatMessages.innerHTML = `
+                <div class="chat-message assistant">
+                    <strong>🦎 MeatLizard AI:</strong> Chat cleared. How can I help you?
+                </div>
+            `;
+            messageCount = 0;
+            messageCountEl.textContent = messageCount;
+        }
+
+        // Event listeners
+        connectButton.addEventListener('click', function() {
+            if (isConnected) {
+                disconnectFromChat();
+            } else {
+                connectToChat();
+            }
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        clearButton.addEventListener('click', clearChat);
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-connect on page load
+        // connectToChat();
+    </script>
+</body>
+</html>

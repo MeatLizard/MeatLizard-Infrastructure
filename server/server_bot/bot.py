@@ -15,6 +15,14 @@ from shared_lib.metrics import ClientBotMetrics
 from shared_lib.db import get_db_session, Metric
 from shared_lib.transcripts import generate_csv_transcript
 
+# Import for database session factory
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent / "web"))
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+
 intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
@@ -23,8 +31,16 @@ class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tree = app_commands.CommandTree(self)
+        self.db_session_factory = None
 
     async def setup_hook(self):
+        # Setup database session factory
+        await self._setup_database()
+        
+        # Load cogs
+        await self._load_cogs()
+        
+        # Sync commands
         guild_id = os.getenv("DISCORD_GUILD_ID")
         if guild_id:
             guild = discord.Object(id=int(guild_id))
@@ -32,6 +48,31 @@ class MyBot(commands.Bot):
             await self.tree.sync(guild=guild)
         else:
             await self.tree.sync()
+    
+    async def _setup_database(self):
+        """Setup database connection and session factory"""
+        database_url = os.getenv('DATABASE_URL', 'postgresql+asyncpg://test:test@localhost:5432/test')
+        
+        engine = create_async_engine(
+            database_url,
+            echo=False,
+            pool_pre_ping=True
+        )
+        
+        self.db_session_factory = sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False
+        )
+    
+    async def _load_cogs(self):
+        """Load bot cogs"""
+        try:
+            # Load media import cog
+            await self.load_extension('cogs.media_import')
+            print("Loaded media import cog")
+        except Exception as e:
+            print(f"Failed to load media import cog: {e}")
 
 bot = MyBot(command_prefix="!", intents=intents)
 message_queue = None

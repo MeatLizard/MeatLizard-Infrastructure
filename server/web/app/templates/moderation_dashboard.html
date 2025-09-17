@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Moderation Dashboard{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/moderation_dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="moderation-dashboard">
+    <div class="dashboard-header">
+        <h1>Content Moderation Dashboard</h1>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <h3>Pending Reports</h3>
+                <div class="stat-value" id="pending-reports">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Today's Actions</h3>
+                <div class="stat-value" id="todays-actions">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Auto-Moderated</h3>
+                <div class="stat-value" id="auto-moderated">-</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <!-- Moderation Queue -->
+        <div class="moderation-section">
+            <div class="section-header">
+                <h2>Moderation Queue</h2>
+                <div class="queue-filters">
+                    <select id="content-type-filter" class="filter-select">
+                        <option value="">All Content Types</option>
+                        <option value="video">Videos</option>
+                        <option value="comment">Comments</option>
+                        <option value="user">Users</option>
+                        <option value="channel">Channels</option>
+                    </select>
+                    <select id="priority-filter" class="filter-select">
+                        <option value="">All Priorities</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <button id="refresh-queue" class="btn btn-secondary">Refresh</button>
+                </div>
+            </div>
+            
+            <div class="moderation-queue" id="moderation-queue">
+                <!-- Queue items will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <button class="action-btn scan-btn" onclick="showScanModal()">
+                    <i class="icon-scan"></i>
+                    Scan Content
+                </button>
+                <button class="action-btn bulk-btn" onclick="showBulkActionModal()">
+                    <i class="icon-bulk"></i>
+                    Bulk Actions
+                </button>
+                <button class="action-btn stats-btn" onclick="showStatsModal()">
+                    <i class="icon-stats"></i>
+                    View Statistics
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Moderation Item Modal -->
+<div id="moderation-modal" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>Review Content</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="content-preview" id="content-preview">
+                <!-- Content preview will be loaded here -->
+            </div>
+            
+            <div class="report-details" id="report-details">
+                <!-- Report details will be loaded here -->
+            </div>
+            
+            <div class="scan-results" id="scan-results">
+                <!-- Automated scan results will be loaded here -->
+            </div>
+            
+            <div class="moderation-actions">
+                <h4>Take Action</h4>
+                <div class="action-form">
+                    <select id="moderation-action" class="form-select">
+                        <option value="approved">Approve</option>
+                        <option value="flagged">Flag for Review</option>
+                        <option value="hidden">Hide Content</option>
+                        <option value="removed">Remove Content</option>
+                        <option value="restricted">Restrict Access</option>
+                    </select>
+                    
+                    <select id="moderation-reason" class="form-select">
+                        <option value="inappropriate_content">Inappropriate Content</option>
+                        <option value="spam">Spam</option>
+                        <option value="harassment">Harassment</option>
+                        <option value="copyright_violation">Copyright Violation</option>
+                        <option value="violence">Violence</option>
+                        <option value="hate_speech">Hate Speech</option>
+                        <option value="adult_content">Adult Content</option>
+                        <option value="misleading_info">Misleading Information</option>
+                        <option value="privacy_violation">Privacy Violation</option>
+                        <option value="other">Other</option>
+                    </select>
+                    
+                    <textarea id="moderation-notes" class="form-textarea" placeholder="Additional notes (optional)"></textarea>
+                    
+                    <div class="duration-section" id="duration-section" style="display: none;">
+                        <label for="action-duration">Duration (hours):</label>
+                        <input type="number" id="action-duration" class="form-input" min="1" max="8760" placeholder="24">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="apply-action" class="btn btn-primary">Apply Action</button>
+            <button class="btn btn-secondary" onclick="closeModerationModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Content Scan Modal -->
+<div id="scan-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Scan Content</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="scan-form">
+                <div class="form-group">
+                    <label for="scan-video-id">Video ID:</label>
+                    <input type="text" id="scan-video-id" class="form-input" placeholder="Enter video ID">
+                </div>
+                
+                <div class="scan-options">
+                    <h4>Scan Options</h4>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="scan-metadata" checked>
+                        Scan Metadata (Title, Description, Tags)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="scan-visual">
+                        Scan Visual Content (Requires AI Service)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="scan-audio">
+                        Scan Audio Content (Requires AI Service)
+                    </label>
+                </div>
+            </div>
+            
+            <div class="scan-results-container" id="scan-results-container" style="display: none;">
+                <h4>Scan Results</h4>
+                <div id="scan-results-display"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="start-scan" class="btn btn-primary">Start Scan</button>
+            <button class="btn btn-secondary" onclick="closeScanModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Modal -->
+<div id="bulk-action-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Bulk Moderation Action</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="bulk-form">
+                <div class="form-group">
+                    <label for="bulk-content-ids">Content IDs (one per line):</label>
+                    <textarea id="bulk-content-ids" class="form-textarea" rows="6" placeholder="Enter content IDs, one per line"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bulk-action">Action:</label>
+                    <select id="bulk-action" class="form-select">
+                        <option value="approved">Approve</option>
+                        <option value="flagged">Flag for Review</option>
+                        <option value="hidden">Hide Content</option>
+                        <option value="removed">Remove Content</option>
+                        <option value="restricted">Restrict Access</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bulk-reason">Reason:</label>
+                    <select id="bulk-reason" class="form-select">
+                        <option value="inappropriate_content">Inappropriate Content</option>
+                        <option value="spam">Spam</option>
+                        <option value="harassment">Harassment</option>
+                        <option value="copyright_violation">Copyright Violation</option>
+                        <option value="violence">Violence</option>
+                        <option value="hate_speech">Hate Speech</option>
+                        <option value="adult_content">Adult Content</option>
+                        <option value="misleading_info">Misleading Information</option>
+                        <option value="privacy_violation">Privacy Violation</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bulk-notes">Notes:</label>
+                    <textarea id="bulk-notes" class="form-textarea" rows="3" placeholder="Additional notes (optional)"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="apply-bulk-action" class="btn btn-primary">Apply to All</button>
+            <button class="btn btn-secondary" onclick="closeBulkActionModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Report Content Modal -->
+<div id="report-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Report Content</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="report-form">
+                <div class="form-group">
+                    <label for="report-content-type">Content Type:</label>
+                    <select id="report-content-type" class="form-select">
+                        <option value="video">Video</option>
+                        <option value="comment">Comment</option>
+                        <option value="user">User</option>
+                        <option value="channel">Channel</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-content-id">Content ID:</label>
+                    <input type="text" id="report-content-id" class="form-input" placeholder="Enter content ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-reason">Reason:</label>
+                    <select id="report-reason" class="form-select">
+                        <option value="inappropriate_content">Inappropriate Content</option>
+                        <option value="spam">Spam</option>
+                        <option value="harassment">Harassment</option>
+                        <option value="copyright_violation">Copyright Violation</option>
+                        <option value="violence">Violence</option>
+                        <option value="hate_speech">Hate Speech</option>
+                        <option value="adult_content">Adult Content</option>
+                        <option value="misleading_info">Misleading Information</option>
+                        <option value="privacy_violation">Privacy Violation</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-description">Description:</label>
+                    <textarea id="report-description" class="form-textarea" rows="4" placeholder="Describe the issue in detail"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-evidence">Evidence URLs (optional):</label>
+                    <textarea id="report-evidence" class="form-textarea" rows="2" placeholder="URLs to screenshots or other evidence, one per line"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="submit-report" class="btn btn-primary">Submit Report</button>
+            <button class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/moderation_dashboard.js') }}"></script>
+{% endblock %}

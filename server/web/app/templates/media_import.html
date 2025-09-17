@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Import - MeatLizard AI Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/media_import.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Media Import</h1>
+            <p>Import videos from external platforms using yt-dlp</p>
+        </header>
+
+        <div class="import-section">
+            <div class="url-input-section">
+                <h2>Import Media</h2>
+                <form id="importForm" class="import-form">
+                    <div class="form-group">
+                        <label for="sourceUrl">Source URL</label>
+                        <input type="url" id="sourceUrl" name="sourceUrl" 
+                               placeholder="https://youtube.com/watch?v=..." required>
+                        <button type="button" id="extractInfoBtn" class="btn btn-secondary">
+                            Extract Info
+                        </button>
+                    </div>
+
+                    <div id="mediaInfo" class="media-info" style="display: none;">
+                        <h3>Media Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Title:</label>
+                                <span id="mediaTitle">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Uploader:</label>
+                                <span id="mediaUploader">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Platform:</label>
+                                <span id="mediaPlatform">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Duration:</label>
+                                <span id="mediaDuration">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Views:</label>
+                                <span id="mediaViews">-</span>
+                            </div>
+                        </div>
+                        <div class="media-thumbnail">
+                            <img id="mediaThumbnail" src="" alt="Video thumbnail" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="import-options">
+                        <h3>Import Options</h3>
+                        
+                        <div class="form-group">
+                            <label for="importPreset">Import Preset</label>
+                            <select id="importPreset" name="importPreset">
+                                <option value="">Custom Settings</option>
+                            </select>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="form-group">
+                                <label for="maxHeight">Max Resolution</label>
+                                <select id="maxHeight" name="maxHeight">
+                                    <option value="">Original</option>
+                                    <option value="480">480p</option>
+                                    <option value="720">720p</option>
+                                    <option value="1080">1080p</option>
+                                    <option value="1440">1440p</option>
+                                    <option value="2160">4K</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="maxFps">Max Frame Rate</label>
+                                <select id="maxFps" name="maxFps">
+                                    <option value="">Original</option>
+                                    <option value="30">30 FPS</option>
+                                    <option value="60">60 FPS</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="maxFilesize">Max File Size</label>
+                                <select id="maxFilesize" name="maxFilesize">
+                                    <option value="">No Limit</option>
+                                    <option value="100M">100 MB</option>
+                                    <option value="500M">500 MB</option>
+                                    <option value="1G">1 GB</option>
+                                    <option value="2G">2 GB</option>
+                                    <option value="5G">5 GB</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="preferredCodec">Preferred Codec</label>
+                                <select id="preferredCodec" name="preferredCodec">
+                                    <option value="">Any</option>
+                                    <option value="h264">H.264</option>
+                                    <option value="h265">H.265</option>
+                                    <option value="vp9">VP9</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="audioOnly" name="audioOnly">
+                                Audio Only
+                            </label>
+                        </div>
+
+                        <div class="form-group audio-options" style="display: none;">
+                            <label for="audioFormat">Audio Format</label>
+                            <select id="audioFormat" name="audioFormat">
+                                <option value="mp3">MP3</option>
+                                <option value="flac">FLAC</option>
+                                <option value="aac">AAC</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="qualityPresets">Transcoding Presets</label>
+                            <div class="preset-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="qualityPresets" value="480p_30fps">
+                                    480p 30fps
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="qualityPresets" value="720p_30fps" checked>
+                                    720p 30fps
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="qualityPresets" value="1080p_30fps">
+                                    1080p 30fps
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" placeholder="Optional category">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="preserveMetadata" name="preserveMetadata" checked>
+                                Preserve Original Metadata
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoPublish" name="autoPublish">
+                                Auto-publish (make public)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Start Import</button>
+                        <button type="button" id="savePresetBtn" class="btn btn-secondary">
+                            Save as Preset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="import-history">
+            <h2>Import History</h2>
+            <div class="filter-controls">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="queued">Queued</option>
+                    <option value="downloading">Downloading</option>
+                    <option value="processing">Processing</option>
+                    <option value="completed">Completed</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+            </div>
+            
+            <div id="importJobs" class="import-jobs">
+                <!-- Import jobs will be loaded here -->
+            </div>
+        </div>
+
+        <div class="supported-platforms">
+            <h2>Supported Platforms</h2>
+            <div class="platforms-grid">
+                <div class="platform-item">
+                    <strong>YouTube</strong>
+                    <span>youtube.com, youtu.be</span>
+                </div>
+                <div class="platform-item">
+                    <strong>TikTok</strong>
+                    <span>tiktok.com</span>
+                </div>
+                <div class="platform-item">
+                    <strong>Instagram</strong>
+                    <span>instagram.com</span>
+                </div>
+                <div class="platform-item">
+                    <strong>Twitter/X</strong>
+                    <span>twitter.com, x.com</span>
+                </div>
+                <div class="platform-item">
+                    <strong>Vimeo</strong>
+                    <span>vimeo.com</span>
+                </div>
+                <div class="platform-item">
+                    <strong>Twitch</strong>
+                    <span>twitch.tv</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Preset Modal -->
+    <div id="savePresetModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Save Import Preset</h3>
+            <form id="savePresetForm">
+                <div class="form-group">
+                    <label for="presetName">Preset Name</label>
+                    <input type="text" id="presetName" name="presetName" required>
+                </div>
+                <div class="form-group">
+                    <label for="presetDescription">Description</label>
+                    <textarea id="presetDescription" name="presetDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Preset</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/media_import.js') }}"></script>
+</body>
+</html>

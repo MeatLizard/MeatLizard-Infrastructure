@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - MeatLizard AI Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/home.css') }}">
+</head>
+<body>
+    {% include "base.html" %}
+    
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1>Discover Amazing Videos</h1>
+                <p>Explore trending content, find new creators, and enjoy personalized recommendations.</p>
+                <div class="hero-actions">
+                    <a href="/browse" class="btn btn-primary">Browse Videos</a>
+                    <a href="/channels" class="btn btn-secondary">Explore Channels</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Discovery Sections -->
+        <div class="discovery-sections" id="discovery-sections">
+            <!-- Sections will be loaded dynamically -->
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-grid">
+                <a href="/video-upload" class="action-card">
+                    <div class="action-icon">📹</div>
+                    <h3>Upload Video</h3>
+                    <p>Share your content with the world</p>
+                </a>
+                
+                <a href="/channels" class="action-card">
+                    <div class="action-icon">📺</div>
+                    <h3>Create Channel</h3>
+                    <p>Organize your videos in channels</p>
+                </a>
+                
+                <a href="/playlists" class="action-card">
+                    <div class="action-icon">📋</div>
+                    <h3>Make Playlist</h3>
+                    <p>Curate collections of videos</p>
+                </a>
+                
+                <a href="/browse" class="action-card">
+                    <div class="action-icon">🔍</div>
+                    <h3>Discover</h3>
+                    <p>Find new content and creators</p>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', path='/js/home.js') }}"></script>
+</body>
+</html>

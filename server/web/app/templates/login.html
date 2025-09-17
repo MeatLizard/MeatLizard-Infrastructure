@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MeatLizard AI Platform</title>
+    <link href="/static/css/meatlizard.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="mascot">🦎</div>
+        <h1>MEATLIZARD AI PLATFORM</h1>
+        <div class="subtitle">Sign In to Your Account</div>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/">Home</a> |
+        <a href="/features">Features</a> |
+        <a href="/login" class="active">Login</a> |
+        <a href="/register">Sign Up</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <div class="form-container" style="max-width: 500px; margin: 0 auto;">
+            <h2 class="text-center">Sign In to Your Account</h2>
+            <p class="text-center mb-3">
+                Or <a href="/register">create a new account</a>
+            </p>
+
+            <form id="loginForm">
+                <div>
+                    <label for="username">Username</label>
+                    <input id="username" name="username" type="text" required placeholder="Enter your username">
+                </div>
+
+                <div>
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" required placeholder="Enter your password">
+                </div>
+
+                <div id="errorMessage" class="alert alert-error hidden">
+                    <span id="errorText"></span>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="retro-button" id="submitButton">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        &copy; 2024 MeatLizard Systems | Powered by raw meat and GPUs
+    </footer>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitButton = document.getElementById('submitButton');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            
+            // Disable submit button
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
+            
+            // Hide previous errors
+            errorMessage.classList.add('hidden');
+            
+            const formData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token and redirect
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = '/dashboard';
+                } else {
+                    // Show error
+                    errorText.textContent = data.detail || 'Login failed';
+                    errorMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorText.textContent = 'Network error. Please try again.';
+                errorMessage.classList.remove('hidden');
+            } finally {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<span class="absolute left-0 inset-y-0 flex items-center pl-3"><i class="fas fa-sign-in-alt text-green-500 group-hover:text-green-400"></i></span>Sign in';
+            }
+        });
+    </script>
+</body>
+</html>

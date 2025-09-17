@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - MeatLizard AI Platform</title>
+    <link href="/static/css/meatlizard.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="mascot">🦎</div>
+        <h1>MEATLIZARD AI PLATFORM</h1>
+        <div class="subtitle">Documentation & Guides</div>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/">Home</a> |
+        <a href="/features">Features</a> |
+        <a href="/pricing">Pricing</a> |
+        <a href="/docs" class="active">Docs</a> |
+        <a href="/login">Login</a> |
+        <a href="/register">Sign Up</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <h2>Documentation</h2>
+        <p>
+            Welcome to the MeatLizard AI Platform documentation. Here you'll find guides, tutorials, and reference materials 
+            to help you get the most out of our platform.
+        </p>
+
+        <div class="card-grid">
+            <!-- Getting Started -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-rocket"></i> Getting Started
+                </div>
+                <p>New to MeatLizard? Start here to learn the basics and set up your account.</p>
+                <ul>
+                    <li><a href="#quick-start">Quick Start Guide</a></li>
+                    <li><a href="#account-setup">Account Setup</a></li>
+                    <li><a href="#first-chat">Your First AI Chat</a></li>
+                    <li><a href="#dashboard-tour">Dashboard Tour</a></li>
+                </ul>
+            </div>
+
+            <!-- AI Chat -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-robot"></i> AI Chat
+                </div>
+                <p>Learn how to use our powerful AI chat system with local inference.</p>
+                <ul>
+                    <li><a href="#chat-basics">Chat Basics</a></li>
+                    <li><a href="#model-selection">Model Selection</a></li>
+                    <li><a href="#conversation-management">Managing Conversations</a></li>
+                    <li><a href="#discord-integration">Discord Integration</a></li>
+                </ul>
+            </div>
+
+            <!-- Content Tools -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tools"></i> Content Tools
+                </div>
+                <p>Master our content creation and sharing tools.</p>
+                <ul>
+                    <li><a href="#url-shortener">URL Shortener</a></li>
+                    <li><a href="#pastebin">Pastebin</a></li>
+                    <li><a href="#video-platform">Video Platform</a></li>
+                    <li><a href="#media-import">Media Import</a></li>
+                </ul>
+            </div>
+
+            <!-- API Reference -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-code"></i> API Reference
+                </div>
+                <p>Integrate MeatLizard into your applications with our REST API.</p>
+                <ul>
+                    <li><a href="/api/docs">OpenAPI Documentation</a></li>
+                    <li><a href="#authentication">Authentication</a></li>
+                    <li><a href="#rate-limits">Rate Limits</a></li>
+                    <li><a href="#webhooks">Webhooks</a></li>
+                </ul>
+            </div>
+
+            <!-- Deployment -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-server"></i> Deployment
+                </div>
+                <p>Deploy your own instance of MeatLizard AI Platform.</p>
+                <ul>
+                    <li><a href="#system-requirements">System Requirements</a></li>
+                    <li><a href="#docker-deployment">Docker Deployment</a></li>
+                    <li><a href="#client-bot-setup">Client Bot Setup</a></li>
+                    <li><a href="#production-config">Production Configuration</a></li>
+                </ul>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-wrench"></i> Troubleshooting
+                </div>
+                <p>Common issues and their solutions.</p>
+                <ul>
+                    <li><a href="#common-issues">Common Issues</a></li>
+                    <li><a href="#error-codes">Error Codes</a></li>
+                    <li><a href="#performance-tips">Performance Tips</a></li>
+                    <li><a href="#support">Getting Support</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Quick Start Guide</h2>
+        <div class="card" id="quick-start">
+            <h3>1. Create Your Account</h3>
+            <p>Sign up for a free MeatLizard account to get started. No email required - just choose a username and password.</p>
+            <div class="text-center">
+                <a href="/register" class="retro-button">Create Account</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>2. Explore the Dashboard</h3>
+            <p>Once logged in, you'll see your dashboard with access to all platform features:</p>
+            <ul>
+                <li><strong>AI Chat:</strong> Start conversations with our AI models</li>
+                <li><strong>URL Shortener:</strong> Create short links with analytics</li>
+                <li><strong>Pastebin:</strong> Share code and text snippets</li>
+                <li><strong>Video Platform:</strong> Upload and stream videos</li>
+                <li><strong>Media Import:</strong> Import content from other platforms</li>
+                <li><strong>File Storage:</strong> Manage your uploaded files</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>3. Start Your First AI Chat</h3>
+            <p>Click on "AI Chat" from your dashboard to open the chat interface. The AI will greet you and you can start asking questions or having conversations.</p>
+            <div class="text-center">
+                <a href="/chat" class="retro-button">Try AI Chat</a>
+            </div>
+        </div>
+
+        <h2>System Architecture</h2>
+        <div class="card">
+            <h3>How MeatLizard Works</h3>
+            <p>MeatLizard uses a unique hybrid architecture:</p>
+            <ul>
+                <li><strong>Web Interface:</strong> FastAPI-based web application for user interaction</li>
+                <li><strong>Server Bot:</strong> Discord bot that orchestrates AI sessions and manages channels</li>
+                <li><strong>Client Bot:</strong> Specialized bot running on Apple Silicon for AI inference</li>
+                <li><strong>Local AI:</strong> llama.cpp with Metal acceleration for fast, private inference</li>
+                <li><strong>End-to-End Encryption:</strong> All bot communication is encrypted for security</li>
+            </ul>
+        </div>
+
+        <h2>Need Help?</h2>
+        <div class="card">
+            <p>If you can't find what you're looking for in the documentation, here are other ways to get help:</p>
+            <ul>
+                <li><strong>Status Page:</strong> <a href="/status">Check system status</a></li>
+                <li><strong>API Docs:</strong> <a href="/api/docs">Interactive API documentation</a></li>
+                <li><strong>GitHub:</strong> <a href="https://github.com/meatlizard/platform">Source code and issues</a></li>
+                <li><strong>Discord:</strong> Join our community Discord server</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        &copy; 2024 MeatLizard Systems | Powered by raw meat and GPUs
+    </footer>
+</body>
+</html>

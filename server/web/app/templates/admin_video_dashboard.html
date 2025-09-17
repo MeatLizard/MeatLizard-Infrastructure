@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Management Dashboard - MeatLizard Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/admin_video_dashboard.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>Video Management Dashboard</h1>
+            <nav class="admin-nav">
+                <a href="/admin/videos" class="nav-link active">Videos</a>
+                <a href="/admin/moderation" class="nav-link">Moderation</a>
+                <a href="/admin/system" class="nav-link">System</a>
+            </nav>
+        </header>
+
+        <main class="admin-main">
+            <!-- Dashboard Stats -->
+            <section class="stats-section">
+                <h2>Platform Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Videos</h3>
+                        <div class="stat-value" id="total-videos">-</div>
+                        <div class="stat-breakdown" id="video-status-breakdown"></div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Storage Usage</h3>
+                        <div class="stat-value" id="total-storage">-</div>
+                        <div class="stat-detail">
+                            <span>Original: <span id="original-storage">-</span></span>
+                            <span>Transcoded: <span id="transcoded-storage">-</span></span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Transcoding Queue</h3>
+                        <div class="stat-value" id="queue-status">-</div>
+                        <div class="stat-breakdown" id="transcoding-status-breakdown"></div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Recent Activity (24h)</h3>
+                        <div class="stat-detail">
+                            <span>Uploads: <span id="recent-uploads">-</span></span>
+                            <span>Views: <span id="recent-views">-</span></span>
+                            <span>Failed Jobs: <span id="failed-jobs" class="alert-text">-</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Video Management -->
+            <section class="video-management-section">
+                <div class="section-header">
+                    <h2>Video Management</h2>
+                    <div class="section-actions">
+                        <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+                        <button id="bulk-actions-btn" class="btn btn-primary" disabled>Bulk Actions</button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-panel">
+                    <div class="filter-group">
+                        <label for="status-filter">Status:</label>
+                        <select id="status-filter">
+                            <option value="">All Statuses</option>
+                            <option value="uploading">Uploading</option>
+                            <option value="processing">Processing</option>
+                            <option value="transcoding">Transcoding</option>
+                            <option value="ready">Ready</option>
+                            <option value="failed">Failed</option>
+                            <option value="deleted">Deleted</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="visibility-filter">Visibility:</label>
+                        <select id="visibility-filter">
+                            <option value="">All Visibility</option>
+                            <option value="public">Public</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="creator-filter">Creator:</label>
+                        <input type="text" id="creator-filter" placeholder="Search by creator name or email">
+                    </div>
+                    <div class="filter-group">
+                        <label for="search-filter">Search:</label>
+                        <input type="text" id="search-filter" placeholder="Search titles and descriptions">
+                    </div>
+                    <div class="filter-group">
+                        <label for="sort-by">Sort by:</label>
+                        <select id="sort-by">
+                            <option value="created_at">Created Date</option>
+                            <option value="updated_at">Updated Date</option>
+                            <option value="title">Title</option>
+                            <option value="file_size">File Size</option>
+                            <option value="duration_seconds">Duration</option>
+                        </select>
+                        <select id="sort-order">
+                            <option value="desc">Descending</option>
+                            <option value="asc">Ascending</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Panel -->
+                <div id="bulk-actions-panel" class="bulk-actions-panel" style="display: none;">
+                    <div class="bulk-actions-content">
+                        <span id="selected-count">0 videos selected</span>
+                        <div class="bulk-actions-buttons">
+                            <select id="bulk-visibility-select">
+                                <option value="">Change Visibility...</option>
+                                <option value="public">Make Public</option>
+                                <option value="unlisted">Make Unlisted</option>
+                                <option value="private">Make Private</option>
+                            </select>
+                            <button id="bulk-visibility-btn" class="btn btn-warning">Update Visibility</button>
+                            <button id="bulk-delete-btn" class="btn btn-danger">Delete Selected</button>
+                            <button id="clear-selection-btn" class="btn btn-secondary">Clear Selection</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Videos Table -->
+                <div class="table-container">
+                    <table class="videos-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-checkbox"></th>
+                                <th>Title</th>
+                                <th>Creator</th>
+                                <th>Status</th>
+                                <th>Visibility</th>
+                                <th>Size</th>
+                                <th>Duration</th>
+                                <th>Transcoding</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="videos-table-body">
+                            <!-- Videos will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span id="pagination-info">-</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="prev-page-btn" class="btn btn-secondary" disabled>Previous</button>
+                        <span id="page-numbers"></span>
+                        <button id="next-page-btn" class="btn btn-secondary" disabled>Next</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Storage Report -->
+            <section class="storage-report-section">
+                <h2>Storage Usage Report</h2>
+                <div class="report-tabs">
+                    <button class="tab-btn active" data-tab="by-status">By Status</button>
+                    <button class="tab-btn" data-tab="by-creator">By Creator</button>
+                    <button class="tab-btn" data-tab="by-quality">By Quality</button>
+                </div>
+                <div class="report-content">
+                    <div id="storage-by-status" class="report-tab active">
+                        <div class="chart-container">
+                            <canvas id="status-storage-chart"></canvas>
+                        </div>
+                    </div>
+                    <div id="storage-by-creator" class="report-tab">
+                        <div class="table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Creator</th>
+                                        <th>Videos</th>
+                                        <th>Storage (GB)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="creator-storage-table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="storage-by-quality" class="report-tab">
+                        <div class="table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Quality Preset</th>
+                                        <th>Jobs</th>
+                                        <th>Storage (GB)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="quality-storage-table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transcoding Queue Status -->
+            <section class="transcoding-section">
+                <h2>Transcoding Queue Status</h2>
+                <div class="transcoding-stats">
+                    <div class="queue-overview">
+                        <h3>Queue Overview</h3>
+                        <div id="queue-status-chart"></div>
+                    </div>
+                    <div class="performance-metrics">
+                        <h3>Performance (24h)</h3>
+                        <div class="metric-item">
+                            <span>Completed Jobs:</span>
+                            <span id="completed-jobs-24h">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Average Duration:</span>
+                            <span id="avg-duration">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="common-errors">
+                    <h3>Common Errors</h3>
+                    <div id="error-list"></div>
+                </div>
+            </section>
+
+            <!-- Cleanup Recommendations -->
+            <section class="cleanup-section">
+                <h2>Cleanup Recommendations</h2>
+                <div class="cleanup-cards">
+                    <div class="cleanup-card">
+                        <h3>Deleted Videos</h3>
+                        <div class="cleanup-stats">
+                            <span>Count: <span id="deleted-videos-count">-</span></span>
+                            <span>Storage: <span id="deleted-videos-storage">-</span> GB</span>
+                        </div>
+                        <button id="cleanup-deleted-btn" class="btn btn-warning">Clean Up Deleted Videos</button>
+                    </div>
+                    <div class="cleanup-card">
+                        <h3>Old Failed Jobs</h3>
+                        <div class="cleanup-stats">
+                            <span>Count: <span id="old-failed-jobs-count">-</span></span>
+                        </div>
+                        <button id="cleanup-failed-jobs-btn" class="btn btn-warning">Remove Old Failed Jobs</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Video Details Modal -->
+    <div id="video-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Video Details</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="video-details-content">
+                <!-- Video details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Action</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-message"></p>
+                <div class="modal-actions">
+                    <button id="confirm-action-btn" class="btn btn-danger">Confirm</button>
+                    <button class="btn btn-secondary modal-close">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/admin_video_dashboard.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - MeatLizard AI Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/analytics_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="dashboard-header">
+            <h1>Analytics Dashboard</h1>
+            <div class="header-controls">
+                <select id="timeframe-selector" class="timeframe-select">
+                    <option value="7d" {% if timeframe == "7d" %}selected{% endif %}>Last 7 days</option>
+                    <option value="30d" {% if timeframe == "30d" %}selected{% endif %}>Last 30 days</option>
+                    <option value="90d" {% if timeframe == "90d" %}selected{% endif %}>Last 90 days</option>
+                </select>
+                <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+            </div>
+        </header>
+
+        <!-- Overview Cards -->
+        <div class="overview-cards">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Total Videos</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ dashboard_data.overview.total_videos or 0 }}</div>
+                    <div class="metric-change">+{{ dashboard_data.overview.get('video_growth', 0) }}% this period</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Total Views</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ "{:,}".format(dashboard_data.overview.total_views or 0) }}</div>
+                    <div class="metric-change">{{ dashboard_data.overview.average_views_per_video or 0 }} avg per video</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Watch Time</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ "{:.1f}h".format(dashboard_data.overview.total_watch_time_hours or 0) }}</div>
+                    <div class="metric-change">{{ "{:.1f}".format((dashboard_data.overview.total_watch_time_hours or 0) / (dashboard_data.overview.total_videos or 1)) }}h avg per video</div>
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h3>Engagement</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">{{ dashboard_data.overview.total_likes or 0 }}</div>
+                    <div class="metric-change">{{ "{:.1f}%".format(dashboard_data.performance_insights.engagement_rate or 0) }} rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-row">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Views Over Time</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="viewsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Watch Time Over Time</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="watchTimeChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Videos Section -->
+        <div class="top-videos-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Top Performing Videos</h3>
+                </div>
+                <div class="card-body">
+                    <div class="video-list">
+                        {% for video in dashboard_data.top_videos %}
+                        <div class="video-item">
+                            <div class="video-info">
+                                <h4><a href="/dashboard/video/{{ video.video_id }}">{{ video.title }}</a></h4>
+                                <div class="video-stats">
+                                    <span class="stat">{{ "{:,}".format(video.views) }} views</span>
+                                    <span class="stat">{{ "{:.1f}h".format(video.watch_time_hours) }} watch time</span>
+                                </div>
+                            </div>
+                            <div class="video-actions">
+                                <a href="/dashboard/video/{{ video.video_id }}" class="btn btn-sm btn-primary">View Analytics</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Insights -->
+        {% if dashboard_data.performance_insights.insights %}
+        <div class="insights-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Performance Insights</h3>
+                </div>
+                <div class="card-body">
+                    <div class="insights-list">
+                        {% for insight in dashboard_data.performance_insights.insights %}
+                        <div class="insight-item insight-{{ insight.type }}">
+                            <div class="insight-icon">
+                                {% if insight.type == "success" %}
+                                    ✅
+                                {% elif insight.type == "warning" %}
+                                    ⚠️
+                                {% else %}
+                                    💡
+                                {% endif %}
+                            </div>
+                            <div class="insight-content">
+                                <h4>{{ insight.title }}</h4>
+                                <p>{{ insight.message }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Activity -->
+        {% if dashboard_data.recent_activity %}
+        <div class="activity-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    <div class="activity-list">
+                        {% for activity in dashboard_data.recent_activity[:10] %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                {% if activity.type == "like" %}
+                                    👍
+                                {% elif activity.type == "dislike" %}
+                                    👎
+                                {% elif activity.type == "comment" %}
+                                    💬
+                                {% else %}
+                                    📊
+                                {% endif %}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-text">
+                                    <strong>{{ activity.user }}</strong>
+                                    {% if activity.type == "like" %}
+                                        liked your video
+                                    {% elif activity.type == "dislike" %}
+                                        disliked your video
+                                    {% elif activity.type == "comment" %}
+                                        commented on your video
+                                    {% endif %}
+                                    <em>"{{ activity.video }}"</em>
+                                    {% if activity.content %}
+                                        <br><span class="comment-preview">{{ activity.content }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="activity-time">{{ activity.timestamp }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="{{ url_for('static', path='/js/analytics_dashboard.js') }}"></script>
+    <script>
+        // Initialize dashboard with data
+        const dashboardData = {{ dashboard_data | tojson }};
+        const currentTimeframe = "{{ timeframe }}";
+        
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard(dashboardData, currentTimeframe);
+        });
+    </script>
+</body>
+</html>

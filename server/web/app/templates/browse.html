@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Videos - MeatLizard AI Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/browse.css') }}">
+</head>
+<body>
+    {% include "base.html" %}
+    
+    <div class="container">
+        <!-- Search and Filters -->
+        <div class="browse-header">
+            <div class="search-section">
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search videos, channels, playlists..." />
+                    <button id="search-btn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+            
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label for="category-filter">Category:</label>
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sort-filter">Sort by:</label>
+                    <select id="sort-filter">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="most_viewed">Most Viewed</option>
+                        <option value="most_liked">Most Liked</option>
+                        <option value="duration_asc">Shortest First</option>
+                        <option value="duration_desc">Longest First</option>
+                        <option value="alphabetical">A-Z</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="duration-filter">Duration:</label>
+                    <select id="duration-filter">
+                        <option value="">Any Duration</option>
+                        <option value="0-240">Under 4 minutes</option>
+                        <option value="240-1200">4-20 minutes</option>
+                        <option value="1200-3600">20-60 minutes</option>
+                        <option value="3600-">Over 1 hour</option>
+                    </select>
+                </div>
+                
+                <button id="clear-filters-btn" class="btn btn-secondary">Clear Filters</button>
+            </div>
+        </div>
+        
+        <!-- Content Tabs -->
+        <div class="content-tabs">
+            <button class="tab-btn active" data-tab="videos">Videos</button>
+            <button class="tab-btn" data-tab="channels">Channels</button>
+            <button class="tab-btn" data-tab="playlists">Playlists</button>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-section">
+            <div class="results-header">
+                <h2 id="results-title">All Videos</h2>
+                <div class="results-count" id="results-count">Loading...</div>
+            </div>
+            
+            <!-- Videos Tab -->
+            <div id="videos-tab" class="tab-content active">
+                <div class="video-grid" id="video-grid">
+                    <!-- Videos will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Channels Tab -->
+            <div id="channels-tab" class="tab-content">
+                <div class="channel-grid" id="channel-grid">
+                    <!-- Channels will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Playlists Tab -->
+            <div id="playlists-tab" class="tab-content">
+                <div class="playlist-grid" id="playlist-grid">
+                    <!-- Playlists will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be generated here -->
+            </div>
+        </div>
+        
+        <!-- Trending Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Trending</h3>
+                <div class="trending-videos" id="trending-videos">
+                    <!-- Trending videos will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Popular Categories</h3>
+                <div class="popular-categories" id="popular-categories">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', path='/js/browse.js') }}"></script>
+</body>
+</html>

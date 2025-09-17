@@ -2,29 +2,209 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <link href="/static/vendor/video.js/video-js.min.css" rel="stylesheet">
     <link href="/static/css/video_player.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {% endblock %}
 
 {% block content %}
-    <h2>Video Player</h2>
-    <video
-        id="my-video"
-        class="video-js vjs-theme-city"
-        controls
-        preload="auto"
-        width="640"
-        height="264"
-        data-setup='{}'>
-        <source src="/static/test_720p.mp4" type="video/mp4">
-        <p class="vjs-no-js">
-            To view this video please enable JavaScript, and consider upgrading to a
-            web browser that
-            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-        </p>
-    </video>
-    <br>
-    <button id="theme-toggle">Toggle Theme</button>
-    <script src="/static/vendor/video.js/video.min.js"></script>
+    <div class="video-container">
+        <div class="video-header">
+            <h1 id="video-title">Loading...</h1>
+            <div class="video-meta">
+                <span id="video-duration">--:--</span>
+                <span id="video-views">-- views</span>
+                <span id="video-date">--</span>
+            </div>
+        </div>
+        
+        <div class="video-player-wrapper">
+            <video 
+                id="adaptive-video-player"
+                class="adaptive-video-player"
+                controls
+                preload="metadata"
+                poster=""
+                playsinline>
+                <p class="no-js-message">
+                    Your browser does not support HTML5 video or JavaScript is disabled.
+                    Please enable JavaScript and use a modern browser to view this video.
+                </p>
+            </video>
+            
+            <!-- Loading overlay -->
+            <div id="loading-overlay" class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading video...</div>
+            </div>
+            
+            <!-- Error overlay -->
+            <div id="error-overlay" class="error-overlay" style="display: none;">
+                <div class="error-content">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-message">Failed to load video</div>
+                    <button id="retry-button" class="retry-button">Retry</button>
+                </div>
+            </div>
+            
+            <!-- Quality selector -->
+            <div id="quality-selector" class="quality-selector">
+                <button id="quality-button" class="quality-button">
+                    <span id="current-quality">Auto</span>
+                    <span class="quality-arrow">▼</span>
+                </button>
+                <div id="quality-menu" class="quality-menu">
+                    <div class="quality-option" data-quality="auto">
+                        <span>Auto</span>
+                        <span class="quality-indicator">●</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Playback speed selector -->
+            <div id="speed-selector" class="speed-selector">
+                <button id="speed-button" class="speed-button">
+                    <span id="current-speed">1x</span>
+                </button>
+                <div id="speed-menu" class="speed-menu">
+                    <div class="speed-option" data-speed="0.5">0.5x</div>
+                    <div class="speed-option" data-speed="0.75">0.75x</div>
+                    <div class="speed-option selected" data-speed="1">1x</div>
+                    <div class="speed-option" data-speed="1.25">1.25x</div>
+                    <div class="speed-option" data-speed="1.5">1.5x</div>
+                    <div class="speed-option" data-speed="2">2x</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Video info and controls -->
+        <div class="video-info">
+            <!-- Like/Dislike controls -->
+            <div class="video-actions">
+                <div class="like-dislike-container">
+                    <button id="like-button" class="action-button like-button" title="Like this video">
+                        <span class="button-icon">👍</span>
+                        <span id="like-count" class="button-count">0</span>
+                    </button>
+                    <button id="dislike-button" class="action-button dislike-button" title="Dislike this video">
+                        <span class="button-icon">👎</span>
+                        <span id="dislike-count" class="button-count">0</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="video-description">
+                <p id="video-description-text">Loading description...</p>
+            </div>
+            
+            <!-- Comments section -->
+            <div class="comments-section">
+                <div class="comments-header">
+                    <h3 id="comments-title">Comments</h3>
+                    <div class="comments-sort">
+                        <select id="comments-sort-select">
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
+                            <option value="top">Top comments</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Comment form -->
+                <div class="comment-form-container">
+                    <form id="comment-form" class="comment-form">
+                        <textarea 
+                            id="comment-input" 
+                            class="comment-input" 
+                            placeholder="Add a comment..."
+                            maxlength="2000"
+                            rows="3"></textarea>
+                        <div class="comment-form-actions">
+                            <button type="button" id="comment-cancel" class="comment-button secondary">Cancel</button>
+                            <button type="submit" id="comment-submit" class="comment-button primary" disabled>Comment</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Comments list -->
+                <div id="comments-list" class="comments-list">
+                    <div class="comments-loading">Loading comments...</div>
+                </div>
+                
+                <!-- Load more button -->
+                <div class="load-more-container">
+                    <button id="load-more-comments" class="load-more-button" style="display: none;">
+                        Load more comments
+                    </button>
+                </div>
+            </div>
+            
+            <div class="video-stats">
+                <div class="stats-section">
+                    <h3>Playback Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Current Quality:</span>
+                            <span id="stat-quality">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Buffer Health:</span>
+                            <span id="stat-buffer">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bandwidth:</span>
+                            <span id="stat-bandwidth">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Quality Switches:</span>
+                            <span id="stat-switches">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Dropped Frames:</span>
+                            <span id="stat-dropped">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Buffering Events:</span>
+                            <span id="stat-buffering">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HLS.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
     <script src="/static/js/video_player.js"></script>
+    
+    <script>
+        // Initialize video player with video data
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoData = {{ video_data | tojson if video_data else 'null' }};
+            const videoId = '{{ video_id }}' || null;
+            const userId = '{{ user_id }}' || null;
+            
+            if (videoId) {
+                // Pre-populate video info if available
+                if (videoData) {
+                    document.getElementById('video-title').textContent = videoData.title || 'Loading...';
+                    document.getElementById('video-description-text').textContent = videoData.description || 'Loading description...';
+                    
+                    if (videoData.duration) {
+                        const duration = window.adaptiveVideoPlayer.formatDuration(videoData.duration);
+                        document.getElementById('video-duration').textContent = duration;
+                    }
+                    
+                    if (videoData.thumbnail_url) {
+                        document.getElementById('adaptive-video-player').poster = videoData.thumbnail_url;
+                    }
+                }
+                
+                // Load the video
+                window.adaptiveVideoPlayer.loadVideo(videoId, userId);
+            } else {
+                // No video ID provided
+                window.adaptiveVideoPlayer.showError('No video specified');
+            }
+        });
+    </script>
 {% endblock %}

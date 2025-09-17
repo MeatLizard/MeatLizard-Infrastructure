@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Configuration - MeatLizard Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/system_config_dashboard.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>System Configuration</h1>
+            <nav class="admin-nav">
+                <a href="/admin/videos" class="nav-link">Videos</a>
+                <a href="/admin/moderation" class="nav-link">Moderation</a>
+                <a href="/admin/system" class="nav-link active">System</a>
+            </nav>
+        </header>
+
+        <main class="admin-main">
+            <!-- System Health Status -->
+            <section class="health-section">
+                <h2>System Health</h2>
+                <div class="health-overview">
+                    <div class="health-status" id="overall-health-status">
+                        <div class="status-indicator" id="health-indicator"></div>
+                        <span id="health-text">Checking...</span>
+                    </div>
+                    <button id="refresh-health-btn" class="btn btn-secondary">Refresh Health Check</button>
+                </div>
+                <div class="health-details" id="health-details">
+                    <!-- Health check details will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Configuration Sections -->
+            <section class="config-sections">
+                <div class="config-tabs">
+                    <button class="tab-btn active" data-section="transcoding">Transcoding</button>
+                    <button class="tab-btn" data-section="upload_limits">Upload Limits</button>
+                    <button class="tab-btn" data-section="storage">Storage</button>
+                    <button class="tab-btn" data-section="content_moderation">Moderation</button>
+                    <button class="tab-btn" data-section="analytics">Analytics</button>
+                    <button class="tab-btn" data-section="notifications">Notifications</button>
+                </div>
+
+                <!-- Transcoding Configuration -->
+                <div id="transcoding-config" class="config-panel active">
+                    <div class="panel-header">
+                        <h3>Transcoding Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="add-preset-btn" class="btn btn-primary">Add Preset</button>
+                            <button id="save-transcoding-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="max-concurrent-jobs">Max Concurrent Jobs:</label>
+                            <input type="number" id="max-concurrent-jobs" min="1" max="10" value="3">
+                        </div>
+                        <div class="config-item">
+                            <label for="job-timeout">Job Timeout (minutes):</label>
+                            <input type="number" id="job-timeout" min="5" max="240" value="60">
+                        </div>
+                        <div class="config-item">
+                            <label for="hls-segment-duration">HLS Segment Duration (seconds):</label>
+                            <input type="number" id="hls-segment-duration" min="2" max="10" value="6">
+                        </div>
+                        <div class="config-item">
+                            <label for="retry-attempts">Retry Attempts:</label>
+                            <input type="number" id="retry-attempts" min="1" max="5" value="3">
+                        </div>
+                    </div>
+
+                    <div class="presets-section">
+                        <h4>Quality Presets</h4>
+                        <div class="presets-table-container">
+                            <table class="presets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Preset Name</th>
+                                        <th>Resolution</th>
+                                        <th>Framerate</th>
+                                        <th>Video Bitrate</th>
+                                        <th>Audio Bitrate</th>
+                                        <th>Enabled</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="presets-table-body">
+                                    <!-- Presets will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Limits Configuration -->
+                <div id="upload_limits-config" class="config-panel">
+                    <div class="panel-header">
+                        <h3>Upload Limits Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="save-upload-limits-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="max-file-size">Max File Size (GB):</label>
+                            <input type="number" id="max-file-size" min="0.1" max="100" step="0.1" value="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="max-duration">Max Duration (hours):</label>
+                            <input type="number" id="max-duration" min="0.1" max="24" step="0.1" value="4">
+                        </div>
+                        <div class="config-item">
+                            <label for="max-uploads-per-day">Max Uploads per Day:</label>
+                            <input type="number" id="max-uploads-per-day" min="1" max="1000" value="50">
+                        </div>
+                        <div class="config-item">
+                            <label for="max-uploads-per-hour">Max Uploads per Hour:</label>
+                            <input type="number" id="max-uploads-per-hour" min="1" max="100" value="10">
+                        </div>
+                    </div>
+
+                    <div class="config-item">
+                        <label for="allowed-formats">Allowed Formats:</label>
+                        <div class="format-checkboxes">
+                            <label><input type="checkbox" value="mp4" checked> MP4</label>
+                            <label><input type="checkbox" value="mov" checked> MOV</label>
+                            <label><input type="checkbox" value="avi" checked> AVI</label>
+                            <label><input type="checkbox" value="mkv" checked> MKV</label>
+                            <label><input type="checkbox" value="webm" checked> WebM</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storage Configuration -->
+                <div id="storage-config" class="config-panel">
+                    <div class="panel-header">
+                        <h3>Storage Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="save-storage-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="s3-bucket">S3 Bucket Name:</label>
+                            <input type="text" id="s3-bucket" placeholder="meatlizard-video-storage">
+                        </div>
+                        <div class="config-item">
+                            <label for="s3-region">S3 Region:</label>
+                            <input type="text" id="s3-region" placeholder="us-east-1">
+                        </div>
+                        <div class="config-item">
+                            <label for="cdn-domain">CDN Domain:</label>
+                            <input type="text" id="cdn-domain" placeholder="cdn.example.com">
+                        </div>
+                        <div class="config-item">
+                            <label for="cleanup-deleted-days">Cleanup Deleted After (days):</label>
+                            <input type="number" id="cleanup-deleted-days" min="1" max="365" value="7">
+                        </div>
+                        <div class="config-item">
+                            <label for="storage-quota-warning">Storage Quota Warning (GB):</label>
+                            <input type="number" id="storage-quota-warning" min="100" max="10000" value="1000">
+                        </div>
+                        <div class="config-item">
+                            <label for="storage-quota-limit">Storage Quota Limit (GB):</label>
+                            <input type="number" id="storage-quota-limit" min="100" max="10000" value="2000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Moderation Configuration -->
+                <div id="content_moderation-config" class="config-panel">
+                    <div class="panel-header">
+                        <h3>Content Moderation Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="save-moderation-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="auto-scan-enabled" checked>
+                                Enable Automatic Content Scanning
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="auto-scan-metadata" checked>
+                                Scan Metadata (Title, Description, Tags)
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="auto-scan-visual">
+                                Scan Visual Content (Requires AI Service)
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="auto-scan-audio">
+                                Scan Audio Content (Requires AI Service)
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="profanity-filter-enabled" checked>
+                                Enable Profanity Filter
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="auto-moderate-threshold">Auto-Moderate Threshold:</label>
+                            <select id="auto-moderate-threshold">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high" selected>High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="report-threshold">Report Auto-Escalate Threshold:</label>
+                            <input type="number" id="report-threshold" min="1" max="10" value="3">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Configuration -->
+                <div id="analytics-config" class="config-panel">
+                    <div class="panel-header">
+                        <h3>Analytics Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="save-analytics-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="retention-days">Data Retention (days):</label>
+                            <input type="number" id="retention-days" min="30" max="3650" value="365">
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="aggregate-daily" checked>
+                                Enable Daily Aggregation
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="track-ip-addresses">
+                                Track IP Addresses
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="track-user-agents" checked>
+                                Track User Agents
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="export-enabled" checked>
+                                Enable Data Export
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Configuration -->
+                <div id="notifications-config" class="config-panel">
+                    <div class="panel-header">
+                        <h3>Notifications Configuration</h3>
+                        <div class="panel-actions">
+                            <button id="save-notifications-btn" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="email-enabled">
+                                Enable Email Notifications
+                            </label>
+                        </div>
+                        <div class="config-item checkbox-item">
+                            <label>
+                                <input type="checkbox" id="webhook-enabled">
+                                Enable Webhook Notifications
+                            </label>
+                        </div>
+                        <div class="config-item">
+                            <label for="webhook-url">Webhook URL:</label>
+                            <input type="url" id="webhook-url" placeholder="https://example.com/webhook">
+                        </div>
+                    </div>
+
+                    <div class="notification-events">
+                        <h4>Notification Events</h4>
+                        <div class="config-grid">
+                            <div class="config-item checkbox-item">
+                                <label>
+                                    <input type="checkbox" id="notify-on-upload">
+                                    Notify on Video Upload
+                                </label>
+                            </div>
+                            <div class="config-item checkbox-item">
+                                <label>
+                                    <input type="checkbox" id="notify-on-transcoding-complete">
+                                    Notify on Transcoding Complete
+                                </label>
+                            </div>
+                            <div class="config-item checkbox-item">
+                                <label>
+                                    <input type="checkbox" id="notify-on-transcoding-failed" checked>
+                                    Notify on Transcoding Failed
+                                </label>
+                            </div>
+                            <div class="config-item checkbox-item">
+                                <label>
+                                    <input type="checkbox" id="notify-on-moderation-needed" checked>
+                                    Notify on Moderation Needed
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Management -->
+            <section class="config-management">
+                <h2>Configuration Management</h2>
+                <div class="management-actions">
+                    <button id="backup-config-btn" class="btn btn-secondary">Backup Configuration</button>
+                    <button id="restore-config-btn" class="btn btn-warning">Restore Configuration</button>
+                    <button id="reset-config-btn" class="btn btn-danger">Reset to Defaults</button>
+                    <button id="validate-config-btn" class="btn btn-primary">Validate Configuration</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add/Edit Preset Modal -->
+    <div id="preset-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="preset-modal-title">Add Transcoding Preset</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="preset-form">
+                    <div class="form-group">
+                        <label for="preset-name">Preset Name:</label>
+                        <input type="text" id="preset-name" required placeholder="e.g., 720p_30fps">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-resolution">Resolution:</label>
+                        <input type="text" id="preset-resolution" required placeholder="e.g., 1280x720">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-framerate">Framerate:</label>
+                        <input type="number" id="preset-framerate" required min="1" max="120" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-bitrate">Video Bitrate (bps):</label>
+                        <input type="number" id="preset-bitrate" required min="100000" placeholder="2500000">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-audio-bitrate">Audio Bitrate (bps):</label>
+                        <input type="number" id="preset-audio-bitrate" required min="64000" placeholder="128000">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="preset-enabled" checked>
+                            Enabled
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="save-preset-btn" class="btn btn-primary">Save Preset</button>
+                <button class="btn btn-secondary modal-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Backup/Restore Modal -->
+    <div id="backup-restore-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="backup-restore-title">Configuration Backup</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="backup-content" style="display: none;">
+                    <p>Configuration backup created successfully. Copy the JSON below to save your configuration:</p>
+                    <textarea id="backup-json" readonly rows="20" style="width: 100%; font-family: monospace;"></textarea>
+                </div>
+                <div id="restore-content" style="display: none;">
+                    <p>Paste your configuration backup JSON below to restore:</p>
+                    <textarea id="restore-json" rows="20" style="width: 100%; font-family: monospace;" placeholder="Paste backup JSON here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="download-backup-btn" class="btn btn-primary" style="display: none;">Download Backup</button>
+                <button id="restore-execute-btn" class="btn btn-warning" style="display: none;">Restore Configuration</button>
+                <button class="btn btn-secondary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Action</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-action-btn" class="btn btn-danger">Confirm</button>
+                <button class="btn btn-secondary modal-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/system_config_dashboard.js') }}"></script>
+</body>
+</html>

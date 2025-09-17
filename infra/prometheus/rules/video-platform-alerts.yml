@@ -1,0 +1,230 @@
+# Video Platform Alerting Rules
+groups:
+  - name: video-platform-alerts
+    rules:
+      # High-level service availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.instance }} has been down for more than 1 minute."
+
+      # Database alerts
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding."
+
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_activity_count) by (instance) > 180
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL has too many connections"
+          description: "PostgreSQL instance {{ $labels.instance }} has {{ $value }} connections (> 180)."
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration[5m]) > 60
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL has slow queries"
+          description: "PostgreSQL instance {{ $labels.instance }} has queries running longer than 60 seconds."
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is not responding."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis instance {{ $labels.instance }} memory usage is {{ $value | humanizePercentage }}."
+
+      # Video platform specific alerts
+      - alert: HighTranscodingQueueSize
+        expr: transcoding_jobs_queued > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High transcoding queue size"
+          description: "There are {{ $value }} transcoding jobs queued, which may indicate processing delays."
+
+      - alert: TranscodingJobsFailing
+        expr: rate(transcoding_jobs_failed_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Transcoding jobs are failing"
+          description: "Transcoding jobs are failing at a rate of {{ $value }} per second."
+
+      - alert: HighVideoUploadRate
+        expr: rate(video_uploads_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "High video upload rate"
+          description: "Video uploads are happening at {{ $value }} per second, monitor system resources."
+
+      - alert: ImportJobsStuck
+        expr: import_jobs_processing > 0 and rate(import_jobs_completed_total[10m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Import jobs appear to be stuck"
+          description: "There are {{ $value }} import jobs processing but none have completed in 10 minutes."
+
+      # Storage alerts
+      - alert: HighStorageUsage
+        expr: (storage_used_bytes / storage_total_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High storage usage"
+          description: "Storage usage is {{ $value | humanizePercentage }} of total capacity."
+
+      - alert: S3OperationsFailing
+        expr: rate(s3_operations_failed_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "S3 operations are failing"
+          description: "S3 operations are failing at a rate of {{ $value }} per second."
+
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage on {{ $labels.instance }} is {{ $value }}%."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage on {{ $labels.instance }} is {{ $value | humanizePercentage }}."
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space is low"
+          description: "Disk usage on {{ $labels.instance }} mount {{ $labels.mountpoint }} is {{ $value | humanizePercentage }}."
+
+      # Application performance alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.method }} {{ $labels.endpoint }}."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.method }} {{ $labels.endpoint }}."
+
+      # Worker health alerts
+      - alert: TranscodingWorkerDown
+        expr: up{job="transcoding-worker"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Transcoding worker is down"
+          description: "Transcoding worker {{ $labels.instance }} is not responding."
+
+      - alert: ImportWorkerDown
+        expr: up{job="import-worker"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Import worker is down"
+          description: "Import worker {{ $labels.instance }} is not responding."
+
+      # FFmpeg process alerts
+      - alert: FFmpegProcessHanging
+        expr: ffmpeg_process_duration_seconds > 3600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FFmpeg process running too long"
+          description: "FFmpeg process {{ $labels.pid }} has been running for {{ $value }}s, may be hanging."
+
+      # yt-dlp alerts
+      - alert: YtDlpDownloadsFailing
+        expr: rate(ytdlp_downloads_failed_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "yt-dlp downloads are failing"
+          description: "yt-dlp downloads are failing at a rate of {{ $value }} per second."
+
+  - name: video-platform-recording-rules
+    rules:
+      # Recording rules for better performance
+      - record: video_platform:upload_rate_5m
+        expr: rate(video_uploads_total[5m])
+
+      - record: video_platform:transcoding_rate_5m
+        expr: rate(transcoding_jobs_completed_total[5m])
+
+      - record: video_platform:error_rate_5m
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])
+
+      - record: video_platform:response_time_95p
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: video_platform:storage_usage_percent
+        expr: (storage_used_bytes / storage_total_bytes) * 100
+
+      - record: video_platform:active_sessions
+        expr: sum(video_sessions_active)
+
+      - record: video_platform:queue_sizes
+        expr: |
+          {
+            transcoding_queued = transcoding_jobs_queued,
+            import_queued = import_jobs_queued
+          }

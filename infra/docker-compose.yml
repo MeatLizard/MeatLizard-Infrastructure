@@ -37,7 +37,8 @@ services:
     container_name: meat-lizard-web
     command: uvicorn server.web.app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ..:/app
+      - ../server:/app/server
+      - ../shared_lib:/app/shared_lib
     ports:
       - "8000:8000"
     depends_on:
@@ -57,7 +58,8 @@ services:
     container_name: meat-lizard-server-bot
     command: python server/server_bot/bot.py
     volumes:
-      - ..:/app
+      - ../server:/app/server
+      - ../shared_lib:/app/shared_lib
     depends_on:
       db:
         condition: service_healthy

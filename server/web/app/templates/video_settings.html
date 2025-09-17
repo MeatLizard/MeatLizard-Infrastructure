@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Video Settings - {{ video.title }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/video_settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="video-settings-container">
+    <div class="settings-header">
+        <h1>Video Settings</h1>
+        <div class="video-info">
+            <h2>{{ video.title }}</h2>
+            <p class="video-meta">
+                Created: {{ video.created_at.strftime('%B %d, %Y') }} | 
+                Status: <span class="status-{{ video.status }}">{{ video.status.title() }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        <!-- Visibility Settings -->
+        <div class="settings-section">
+            <h3>Visibility</h3>
+            <div class="visibility-options">
+                <div class="visibility-option" data-visibility="public">
+                    <input type="radio" id="visibility-public" name="visibility" value="public" 
+                           {% if video.visibility.value == 'public' %}checked{% endif %}>
+                    <label for="visibility-public">
+                        <div class="option-header">
+                            <i class="icon-globe"></i>
+                            <span class="option-title">Public</span>
+                        </div>
+                        <p class="option-description">Anyone can search for and view this video</p>
+                    </label>
+                </div>
+
+                <div class="visibility-option" data-visibility="unlisted">
+                    <input type="radio" id="visibility-unlisted" name="visibility" value="unlisted"
+                           {% if video.visibility.value == 'unlisted' %}checked{% endif %}>
+                    <label for="visibility-unlisted">
+                        <div class="option-header">
+                            <i class="icon-link"></i>
+                            <span class="option-title">Unlisted</span>
+                        </div>
+                        <p class="option-description">Anyone with the link can view this video</p>
+                    </label>
+                </div>
+
+                <div class="visibility-option" data-visibility="private">
+                    <input type="radio" id="visibility-private" name="visibility" value="private"
+                           {% if video.visibility.value == 'private' %}checked{% endif %}>
+                    <label for="visibility-private">
+                        <div class="option-header">
+                            <i class="icon-lock"></i>
+                            <span class="option-title">Private</span>
+                        </div>
+                        <p class="option-description">Only you and people you choose can view this video</p>
+                    </label>
+                </div>
+            </div>
+
+            <div class="visibility-actions">
+                <button id="save-visibility" class="btn btn-primary">Save Visibility Settings</button>
+            </div>
+        </div>
+
+        <!-- Permissions Management (only shown for private videos) -->
+        <div class="settings-section" id="permissions-section" 
+             {% if video.visibility.value != 'private' %}style="display: none;"{% endif %}>
+            <h3>Permissions</h3>
+            
+            <div class="add-permission">
+                <h4>Grant Access to User</h4>
+                <div class="permission-form">
+                    <input type="text" id="user-search" placeholder="Search for user by name or email" class="form-input">
+                    <select id="permission-type" class="form-select">
+                        <option value="view">View Only</option>
+                        <option value="edit">View & Edit</option>
+                        <option value="admin">Full Admin</option>
+                    </select>
+                    <input type="datetime-local" id="expires-at" class="form-input" placeholder="Expires (optional)">
+                    <button id="grant-permission" class="btn btn-secondary">Grant Access</button>
+                </div>
+            </div>
+
+            <div class="permissions-list">
+                <h4>Current Permissions</h4>
+                <div id="permissions-container">
+                    <!-- Permissions will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Analytics -->
+        <div class="settings-section">
+            <h3>Access Analytics</h3>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h4>Total Views</h4>
+                    <div class="analytics-value" id="total-views">-</div>
+                </div>
+                <div class="analytics-card">
+                    <h4>Unique Viewers</h4>
+                    <div class="analytics-value" id="unique-viewers">-</div>
+                </div>
+                <div class="analytics-card">
+                    <h4>Access Attempts</h4>
+                    <div class="analytics-value" id="access-attempts">-</div>
+                </div>
+                <div class="analytics-card">
+                    <h4>Denied Access</h4>
+                    <div class="analytics-value" id="denied-access">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Search Modal -->
+<div id="user-search-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Select User</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="user-search-results" id="user-search-results">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirmation-title">Confirm Action</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmation-message">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-footer">
+            <button id="confirmation-cancel" class="btn btn-secondary">Cancel</button>
+            <button id="confirmation-confirm" class="btn btn-primary">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/video_settings.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,102 @@
+<!-- server/web/app/templates/viewing_history.html -->
+{% extends "base.html" %}
+
+{% block head %}
+    <link href="/static/css/viewing_history.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% endblock %}
+
+{% block content %}
+    <div class="history-container">
+        <div class="history-header">
+            <h1>Viewing History</h1>
+            <p class="history-subtitle">Your recently watched videos</p>
+            
+            <!-- History controls -->
+            <div class="history-controls">
+                <button id="clear-history-btn" class="control-button danger">
+                    Clear All History
+                </button>
+                <button id="privacy-settings-btn" class="control-button secondary">
+                    Privacy Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- Loading state -->
+        <div id="loading-state" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading your viewing history...</p>
+        </div>
+        
+        <!-- Error state -->
+        <div id="error-state" class="error-state" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <div class="error-text">Failed to load viewing history</div>
+            <button id="retry-btn" class="retry-button">Retry</button>
+        </div>
+        
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <div class="empty-icon">📺</div>
+            <h2>No viewing history</h2>
+            <p>Videos you watch will appear here</p>
+            <a href="/video-upload" class="browse-button">Upload a Video</a>
+        </div>
+        
+        <!-- History list -->
+        <div id="history-list" class="history-list" style="display: none;">
+            <!-- History items will be populated by JavaScript -->
+        </div>
+        
+        <!-- Pagination -->
+        <div id="pagination" class="pagination" style="display: none;">
+            <button id="prev-page" class="pagination-button" disabled>← Previous</button>
+            <span id="page-info" class="page-info">Page 1</span>
+            <button id="next-page" class="pagination-button" disabled>Next →</button>
+        </div>
+        
+        <!-- Continue watching section -->
+        <div id="continue-watching-section" class="continue-watching-section" style="display: none;">
+            <h2>Continue Watching</h2>
+            <div id="continue-watching-list" class="continue-watching-list">
+                <!-- Continue watching items will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Recommendations section -->
+        <div id="recommendations-section" class="recommendations-section" style="display: none;">
+            <h2>Recommended for You</h2>
+            <div id="recommendations-list" class="recommendations-list">
+                <!-- Recommendations will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Privacy Settings Modal -->
+    <div id="privacy-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Privacy Settings</h3>
+                <button id="close-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label class="setting-label">
+                        <input type="checkbox" id="history-public-checkbox">
+                        Make my viewing history public
+                    </label>
+                    <p class="setting-description">
+                        When enabled, other users can see your viewing history on your profile.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-privacy" class="modal-button primary">Save Settings</button>
+                <button id="cancel-privacy" class="modal-button secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/viewing_history.js"></script>
+{% endblock %}
